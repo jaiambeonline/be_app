@@ -24,6 +24,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .login-container {
@@ -32,8 +35,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             max-width: 400px;
-            width: 100%;
-            margin: 100px auto;
+            width: 90%;
         }
         
         .login-header {
@@ -124,14 +126,6 @@
             overflow-y: auto;
         }
         
-        .form-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
         .table-actions {
             white-space: nowrap;
         }
@@ -145,7 +139,6 @@
             }
         }
 
-        /* Modal Styles */
         .modal-content {
             border-radius: 10px;
             border: none;
@@ -182,14 +175,23 @@
                     </button>
                 </form>
                 <div class="text-center">
-                    <p class="mb-1 text-muted small">Default: admin / admin123</p>
+                    <p class="mb-1 text-muted small">First time? Use: admin / admin123</p>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5>Loading Application...</h5>
+            <p class="text-muted">Please wait while we initialize the system</p>
+        </div>
+    </div>
+
     <!-- Main Application -->
-    <div id="appScreen" class="hidden">
+    <div id="appScreen" class="hidden w-100" style="min-height: 100vh; background: #f8f9fa;">
         <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
             <div class="container-fluid">
@@ -673,8 +675,19 @@
         let currentUser = null;
         let selectedWorksheets = [];
 
+        // Show loading screen
+        function showLoading() {
+            document.getElementById('loadingScreen').classList.remove('hidden');
+        }
+
+        // Hide loading screen
+        function hideLoading() {
+            document.getElementById('loadingScreen').classList.add('hidden');
+        }
+
         // Check if user is already logged in
         function checkExistingLogin() {
+            showLoading();
             const savedUser = localStorage.getItem('currentUser');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
@@ -687,6 +700,9 @@
                     loadUsers();
                     loadClientDropdown();
                 }
+                hideLoading();
+            } else {
+                hideLoading();
             }
         }
 
@@ -696,14 +712,9 @@
             
             // Set current date for worksheet form
             document.getElementById('workDate').valueAsDate = new Date();
-            
-            // Set crane number for current user
-            if (currentUser) {
-                document.getElementById('craneNo').value = currentUser.username;
-            }
         });
 
-        // Login Form
+        // Login Form - FIXED VERSION
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('loginUsername').value;
@@ -715,41 +726,17 @@
                 return;
             }
 
+            showLoading();
             loginBtn.classList.add('loading');
             loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing In...';
             
             try {
-                // Check if user exists in Firestore
-                const usersSnapshot = await db.collection('users')
-                    .where('username', '==', username)
-                    .where('password', '==', password)
-                    .get();
+                // First, check if this is the first user (no users in database)
+                const usersSnapshot = await db.collection('users').get();
                 
-                if (!usersSnapshot.empty) {
-                    const userDoc = usersSnapshot.docs[0];
-                    currentUser = { 
-                        id: userDoc.id,
-                        ...userDoc.data()
-                    };
-                    
-                    // Save to localStorage
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    
-                    showAppScreen();
-                    await loadDashboardData();
-                    await loadClients();
-                    await loadWorksheets();
-                    if (currentUser.role === 'admin') {
-                        await loadInvoices();
-                        await loadUsers();
-                        loadClientDropdown();
-                    }
-                    
-                } else {
-                    // Check if this is first user (create admin)
-                    const allUsers = await db.collection('users').get();
-                    if (allUsers.empty && username === 'admin' && password === 'admin123') {
-                        // Create admin user
+                if (usersSnapshot.empty) {
+                    // First time setup - create admin user
+                    if (username === 'admin' && password === 'admin123') {
                         const adminUser = {
                             username: 'admin',
                             name: 'Administrator',
@@ -773,6 +760,32 @@
                         
                         alert('Welcome! Admin account created successfully.');
                     } else {
+                        throw new Error('For first login, use: admin / admin123');
+                    }
+                } else {
+                    // Regular login - check user credentials
+                    let userFound = false;
+                    
+                    usersSnapshot.forEach(doc => {
+                        const user = doc.data();
+                        if (user.username === username && user.password === password) {
+                            currentUser = { id: doc.id, ...user };
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            userFound = true;
+                        }
+                    });
+                    
+                    if (userFound) {
+                        showAppScreen();
+                        await loadDashboardData();
+                        await loadClients();
+                        await loadWorksheets();
+                        if (currentUser.role === 'admin') {
+                            await loadInvoices();
+                            await loadUsers();
+                            loadClientDropdown();
+                        }
+                    } else {
                         throw new Error('Invalid username or password');
                     }
                 }
@@ -780,6 +793,7 @@
                 console.error('Login error:', error);
                 alert('Login failed: ' + error.message);
             } finally {
+                hideLoading();
                 loginBtn.classList.remove('loading');
                 loginBtn.innerHTML = 'Sign In';
             }
@@ -834,7 +848,9 @@
             });
             
             // Set crane number for current user in worksheet form
-            document.getElementById('craneNo').value = currentUser.username;
+            if (currentUser) {
+                document.getElementById('craneNo').value = currentUser.username;
+            }
         }
 
         // Save Client
