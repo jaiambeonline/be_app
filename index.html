@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhavishya Enterprise - Crane Service Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary) !important;
+        }
+        
+        /* Desktop Sidebar */
+        .sidebar {
+            background-color: var(--primary);
+            color: white;
+            min-height: calc(100vh - 56px);
+            padding: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        /* Mobile Bottom Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            display: none;
+            justify-content: space-around;
+            padding: 10px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-nav-item {
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 5px;
+            border-radius: 5px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .mobile-nav-item.active {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .mobile-nav-icon {
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary);
+            border: none;
+        }
+        
+        .btn-danger {
+            background-color: var(--accent);
+            border: none;
+        }
+        
+        .invoice-history {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .invoice-item {
+            border-left: 4px solid var(--secondary);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+        
+        .client-statement {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .table th {
+            background-color: var(--light);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .user-role {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background-color: var(--accent);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .company-info {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .gst-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .tax-breakdown {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                margin: 50px auto;
+                max-width: 90%;
+            }
+            
+            .sidebar {
+                display: none !important;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+                padding: 15px;
+                padding-bottom: 80px; /* Space for bottom nav */
+            }
+            
+            .mobile-nav {
+                display: flex;
+            }
+            
+            .container-fluid {
+                padding: 0;
+            }
+            
+            .col-md-3, .col-md-9 {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .table-responsive {
+                font-size: 12px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .btn-sm {
+                width: auto;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .card-header {
+                padding: 12px 15px;
+            }
+            
+            .user-role {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-top: 10px;
+            }
+            
+            .company-info {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+        }
+        
+        /* Desktop specific */
+        @media (min-width: 769px) {
+            .mobile-nav {
+                display: none !important;
+            }
+            
+            .sidebar {
+                display: block !important;
+            }
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .print-area {
+                display: block !important;
+            }
+            
+            body {
+                font-size: 12px;
+            }
+            
+            .invoice-table {
+                font-size: 10px;
+            }
+        }
+        
+        .invoice-header {
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .user-badge {
+            background: var(--secondary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="text-center mb-4">
+            <h2><i class="fas fa-cogs"></i> Bhavishya Enterprise</h2>
+            <p class="text-muted">Crane Service Management System</p>
+        </div>
+        <form id="loginForm">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+        <div class="mt-3 text-center">
+            <p class="mb-1"><strong>Default Users:</strong></p>
+            <p class="mb-1">Admin: BE / admin123</p>
+            <p class="mb-1">Crane Operator: crane1 / operator123</p>
+            <p class="mb-0">Crane Operator: crane2 / operator123</p>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="appScreen" class="hidden">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-cogs"></i> Bhavishya Enterprise
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user"></i> <span id="displayUser">Admin</span>
+                        <span class="user-badge" id="userRoleBadge">Admin</span>
+                    </span>
+                    <button class="btn btn-sm btn-light me-2" id="userManagementBtn" style="display: none;">
+                        <i class="fas fa-users-cog"></i>
+                    </button>
+                    <button class="btn btn-sm btn-light" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Desktop Sidebar -->
+                <div class="col-md-3 col-lg-2 d-md-block sidebar no-print">
+                    <div class="position-sticky pt-3">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" data-tab="dashboard">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only operator-only">
+                                <a class="nav-link" href="#" data-tab="clients">
+                                    <i class="fas fa-users"></i> Clients
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-tab="worksheets">
+                                    <i class="fas fa-clipboard-list"></i> Worksheets
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="invoices">
+                                    <i class="fas fa-file-invoice-dollar"></i> Invoices
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="statements">
+                                    <i class="fas fa-book"></i> Client Statements
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="reports">
+                                    <i class="fas fa-chart-bar"></i> Reports
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="users">
+                                    <i class="fas fa-user-shield"></i> User Management
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only operator-only">
+                                <a class="nav-link" href="#" data-tab="company">
+                                    <i class="fas fa-building"></i> Company Info
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-md-9 col-lg-10 ml-sm-auto main-content">
+                    <!-- Company Info Section -->
+                    <div class="company-info no-print">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h4>Bhavishya Enterprise</h4>
+                                <p class="mb-1">Crane Service, Loading & Unloading, Workshop</p>
+                                <p class="mb-1">5 T M Park, Mukund Parnera, Valsad 396020, Gujarat</p>
+                                <p class="mb-0">Mobile: 8866995757 | Email: bhavishyaenterprisevalsad@gmail.com</p>
+                                <p class="mb-0"><span class="gst-badge">GSTIN: 24ABCDE1234F1Z5</span></p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <p class="mb-1"><strong>User:</strong> <span id="displayUserName">Admin</span></p>
+                                <p class="mb-0"><strong>Date:</strong> <span id="currentDate"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Tab -->
+                    <div id="dashboard" class="tab-content">
+                        <div class="row">
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-primary mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Total Clients</h5>
+                                                <h2 id="totalClients">0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-users fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-success mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Active Worksheets</h5>
+                                                <h2 id="activeWorksheets">0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-clipboard-list fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-warning mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Pending Invoices</h5>
+                                                <h2 id="pendingInvoices">0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-danger mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Outstanding Amount</h5>
+                                                <h2 id="outstandingAmount">₹0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-rupee-sign fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Recent Worksheets</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Client</th>
+                                                        <th>Crane No</th>
+                                                        <th>Total Hours</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="recentWorksheets">
+                                                    <!-- Recent worksheets will be populated here -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Recent Invoices</h5>
+                                    </div>
+                                    <div class="card-body invoice-history">
+                                        <div id="recentInvoices">
+                                            <!-- Recent invoices will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clients Tab -->
+                    <div id="clients" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Client Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">
+                                    <i class="fas fa-plus"></i> Add New Client
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Address</th>
+                                                <th>State</th>
+                                                <th>Mobile No</th>
+                                                <th>GST No</th>
+                                                <th>GST Type</th>
+                                                <th class="admin-only">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="clientTable">
+                                            <!-- Client data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Worksheets Tab -->
+                    <div id="worksheets" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Worksheet Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">
+                                    <i class="fas fa-plus"></i> Create New Worksheet
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Client</th>
+                                                <th>Crane No</th>
+                                                <th>In Time</th>
+                                                <th>Out Time</th>
+                                                <th>Total Hours</th>
+                                                <th>Work Details</th>
+                                                <th class="admin-only">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="worksheetTable">
+                                            <!-- Worksheet data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoices Tab -->
+                    <div id="invoices" class="tab-content hidden">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Invoice Creation</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="invoiceForm">
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="invoiceClient" class="form-label">Select Client</label>
+                                                    <select class="form-select" id="invoiceClient" required>
+                                                        <option value="">Select Client</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Invoice Number</label>
+                                                    <input type="text" class="form-control" id="invoiceNumber" value="001-2025-26" readonly>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="addClientToInvoice">
+                                                    <i class="fas fa-plus"></i> Add New Client
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="importWorksheets">
+                                                    <i class="fas fa-download"></i> Import Monthly Worksheets
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>In Time</th>
+                                                            <th>Out Time</th>
+                                                            <th>Lunch</th>
+                                                            <th>Total Hours</th>
+                                                            <th>Work Details</th>
+                                                            <th>Rate Type</th>
+                                                            <th>Rate</th>
+                                                            <th>Amount</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="invoiceItems">
+                                                        <!-- Invoice items will be populated here -->
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td colspan="8" class="text-end"><strong>Total Amount:</strong></td>
+                                                            <td><strong id="invoiceTotal">₹0</strong></td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-outline-success btn-sm" id="addManualService">
+                                                    <i class="fas fa-plus"></i> Add Manual Service
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                                <button type="button" class="btn btn-secondary me-md-2" id="saveDraft">Save Draft</button>
+                                                <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Invoice History</h5>
+                                    </div>
+                                    <div class="card-body invoice-history">
+                                        <div id="invoiceHistory">
+                                            <!-- Invoice history will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Client Statements Tab -->
+                    <div id="statements" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Client Statements</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="statementClient" class="form-label">Select Client</label>
+                                        <select class="form-select" id="statementClient">
+                                            <option value="">Select Client</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="fromDate" class="form-label">From Date</label>
+                                        <input type="date" class="form-control" id="fromDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="toDate" class="form-label">To Date</label>
+                                        <input type="date" class="form-control" id="toDate">
+                                    </div>
+                                </div>
+                                
+                                <div class="card client-statement">
+                                    <div class="card-body">
+                                        <div id="clientStatement">
+                                            <p class="text-center text-muted">Select a client to view their statement</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6>Total Invoiced</h6>
+                                                <h4 id="totalInvoiced">₹0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6>Amount Paid</h6>
+                                                <h4 id="amountPaid">₹0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6>Balance Due</h6>
+                                                <h4 id="balanceDue">₹0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Tab -->
+                    <div id="reports" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Business Reports</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="text-center">Monthly Revenue</h6>
+                                                <canvas id="revenueChart" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="text-center">Client Distribution</h6>
+                                                <canvas id="clientChart" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button class="btn btn-primary w-100 mb-2" id="exportClients">
+                                            <i class="fas fa-download"></i> Export Client List
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button class="btn btn-success w-100 mb-2" id="exportFinancial">
+                                            <i class="fas fa-download"></i> Export Financial Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Management Tab -->
+                    <div id="users" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">User Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+                                    <i class="fas fa-plus"></i> Add New User
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Full Name</th>
+                                                <th>Role</th>
+                                                <th>Created</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="userTable">
+                                            <!-- User data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Info Tab -->
+                    <div id="company" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Company Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Bhavishya Enterprise</h5>
+                                        <p><strong>Address:</strong> 5 T M Park, Mukund Parnera, Valsad 396020</p>
+                                        <p><strong>Mobile:</strong> 8866995757</p>
+                                        <p><strong>Email:</strong> bhavishyaenterprisevalsad@gmail.com</p>
+                                        <p><strong>Services:</strong> Crane Service, Loading & Unloading, Workshop</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Business Hours</h5>
+                                        <p><strong>Monday - Saturday:</strong> 8:00 AM - 8:00 PM</p>
+                                        <p><strong>Sunday:</strong> Emergency Services Only</p>
+                                        
+                                        <h5 class="mt-4">Service Areas</h5>
+                                        <p>Valsad and surrounding regions</p>
+                                        
+                                        <h5 class="mt-4">Payment Terms</h5>
+                                        <p>15 days from invoice date</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h5>About Us</h5>
+                                        <p>Bhavishya Enterprise is a trusted provider of crane services, loading and unloading solutions, and workshop services in Valsad. With years of experience and a commitment to quality, we serve both individual and commercial clients with reliable and efficient solutions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <div class="mobile-nav no-print">
+            <a href="#" class="mobile-nav-item active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt mobile-nav-icon"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-tab="clients">
+                <i class="fas fa-users mobile-nav-icon"></i>
+                <span>Clients</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-tab="worksheets">
+                <i class="fas fa-clipboard-list mobile-nav-icon"></i>
+                <span>Work</span>
+            </a>
+            <a href="#" class="mobile-nav-item admin-only" data-tab="invoices">
+                <i class="fas fa-file-invoice-dollar mobile-nav-icon"></i>
+                <span>Invoices</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-tab="company">
+                <i class="fas fa-info-circle mobile-nav-icon"></i>
+                <span>Info</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Client Modal -->
+    <div class="modal fade" id="clientModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="clientForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="clientName" class="form-label">Client Name *</label>
+                                    <input type="text" class="form-control" id="clientName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientAddress" class="form-label">Client Address *</label>
+                                    <textarea class="form-control" id="clientAddress" rows="3" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientState" class="form-label">State *</label>
+                                    <select class="form-select" id="clientState" required>
+                                        <option value="">Select State</option>
+                                        <option value="Gujarat">Gujarat</option>
+                                        <option value="Maharashtra">Maharashtra</option>
+                                        <option value="Rajasthan">Rajasthan</option>
+                                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                        <option value="Karnataka">Karnataka</option>
+                                        <option value="Tamil Nadu">Tamil Nadu</option>
+                                        <option value="Delhi">Delhi</option>
+                                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="clientMobile" class="form-label">Client Mobile No *</label>
+                                    <input type="text" class="form-control" id="clientMobile" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientGST" class="form-label">Client GST No</label>
+                                    <input type="text" class="form-control" id="clientGST" placeholder="e.g., 27ABCDE1234F1Z5">
+                                    <div class="form-text">Leave blank if client is not GST registered</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">GST Type</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gstType" id="intraState" value="intra" checked>
+                                            <label class="form-check-label" for="intraState">Intra-State (CGST+SGST)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gstType" id="interState" value="inter">
+                                            <label class="form-check-label" for="interState">Inter-State (IGST)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <small>
+                                        <strong>Note:</strong> GST will be automatically calculated based on client state.<br>
+                                        Intra-State: CGST (9%) + SGST (9%) = 18%<br>
+                                        Inter-State: IGST (18%)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveClient">Save Client</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worksheet Modal -->
+    <div class="modal fade" id="worksheetModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Worksheet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="worksheetForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="worksheetClient" class="form-label">Select Client</label>
+                                <select class="form-select" id="worksheetClient" required>
+                                    <option value="">Select Client</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="craneNumber" class="form-label">Crane Number</label>
+                                <select class="form-select" id="craneNumber" required>
+                                    <option value="">Select Crane</option>
+                                    <option value="Crane 1">Crane 1</option>
+                                    <option value="Crane 2">Crane 2</option>
+                                    <option value="Crane 3">Crane 3</option>
+                                    <option value="Crane 4">Crane 4</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="workDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="workDate" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="inTime" class="form-label">In Time</label>
+                                <input type="time" class="form-control" id="inTime" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="outTime" class="form-label">Out Time</label>
+                                <input type="time" class="form-control" id="outTime" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="lunchTime" class="form-label">Lunch Time (minutes)</label>
+                                <input type="number" class="form-control" id="lunchTime" value="30" min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Total Hours</label>
+                                <input type="text" class="form-control" id="totalHours" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="workDetails" class="form-label">Work Details</label>
+                            <textarea class="form-control" id="workDetails" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="rateType" class="form-label">Rate Type</label>
+                            <select class="form-select" id="rateType" required>
+                                <option value="per_hour">Per Hour</option>
+                                <option value="per_day">Per Day</option>
+                                <option value="fixed">Fixed Amount</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="rateAmount" class="form-label">Rate Amount (₹)</label>
+                            <input type="number" class="form-control" id="rateAmount" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveWorksheet">Save Worksheet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label for="newUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newFullName" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="newFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">Role *</label>
+                            <select class="form-select" id="userRole" required>
+                                <option value="operator">Crane Operator</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveUser">Save User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let users = JSON.parse(localStorage.getItem('users')) || [
+            { username: 'BE', password: 'admin123', fullName: 'Admin User', role: 'admin', created: new Date().toISOString(), active: true },
+            { username: 'crane1', password: 'operator123', fullName: 'Crane Operator 1', role: 'operator', created: new Date().toISOString(), active: true },
+            { username: 'crane2', password: 'operator123', fullName: 'Crane Operator 2', role: 'operator', created: new Date().toISOString(), active: true }
+        ];
+        
+        let clients = JSON.parse(localStorage.getItem('clients')) || [];
+        let worksheets = JSON.parse(localStorage.getItem('worksheets')) || [];
+        let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Save default users if not exists
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            // Set current date
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-IN');
+            
+            // Login form handler
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                const user = users.find(u => u.username === username && u.password === password && u.active);
+                
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appScreen').classList.remove('hidden');
+                    document.getElementById('displayUser').textContent = user.fullName;
+                    document.getElementById('displayUserName').textContent = user.fullName;
+                    document.getElementById('userRoleBadge').textContent = user.role === 'admin' ? 'Admin' : 'Operator';
+                    
+                    // Show/hide admin-only elements
+                    const adminElements = document.querySelectorAll('.admin-only');
+                    adminElements.forEach(el => {
+                        if (user.role === 'admin') {
+                            el.style.display = '';
+                        } else {
+                            el.style.display = 'none';
+                        }
+                    });
+                    
+                    // Show user management button for admin
+                    if (user.role === 'admin') {
+                        document.getElementById('userManagementBtn').style.display = 'block';
+                    }
+                    
+                    // Load dashboard data
+                    loadDashboardData();
+                    loadClients();
+                    loadWorksheets();
+                    loadInvoices();
+                    loadUsers();
+                } else {
+                    alert('Invalid username or password');
+                }
+            });
+            
+            // Logout handler
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                currentUser = null;
+                document.getElementById('appScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            });
+            
+            // User management button
+            document.getElementById('userManagementBtn').addEventListener('click', function() {
+                showTab('users');
+            });
+            
+            // Tab navigation
+            document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabName = this.getAttribute('data-tab');
+                    showTab(tabName);
+                    
+                    // Update active states
+                    document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+                    document.querySelectorAll('.mobile-nav-item').forEach(nav => nav.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                });
+            });
+            
+            // Client form handler
+            document.getElementById('saveClient').addEventListener('click', function() {
+                const client = {
+                    id: Date.now(),
+                    name: document.getElementById('clientName').value,
+                    address: document.getElementById('clientAddress').value,
+                    state: document.getElementById('clientState').value,
+                    mobile: document.getElementById('clientMobile').value,
+                    gstNo: document.getElementById('clientGST').value,
+                    gstType: document.querySelector('input[name="gstType"]:checked').value,
+                    created: new Date().toISOString()
+                };
+                
+                clients.push(client);
+                localStorage.setItem('clients', JSON.stringify(clients));
+                
+                // Close modal and refresh
+                bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
+                document.getElementById('clientForm').reset();
+                loadClients();
+                loadDashboardData();
+            });
+            
+            // Worksheet form handler
+            document.getElementById('saveWorksheet').addEventListener('click', function() {
+                const inTime = document.getElementById('inTime').value;
+                const outTime = document.getElementById('outTime').value;
+                const lunchTime = parseInt(document.getElementById('lunchTime').value) || 0;
+                
+                // Calculate total hours
+                const inDateTime = new Date(`2000-01-01T${inTime}`);
+                const outDateTime = new Date(`2000-01-01T${outTime}`);
+                let diffHours = (outDateTime - inDateTime) / (1000 * 60 * 60);
+                
+                // Subtract lunch time
+                diffHours -= lunchTime / 60;
+                
+                const worksheet = {
+                    id: Date.now(),
+                    clientId: parseInt(document.getElementById('worksheetClient').value),
+                    clientName: document.getElementById('worksheetClient').options[document.getElementById('worksheetClient').selectedIndex].text,
+                    craneNumber: document.getElementById('craneNumber').value,
+                    date: document.getElementById('workDate').value,
+                    inTime: inTime,
+                    outTime: outTime,
+                    lunchTime: lunchTime,
+                    totalHours: diffHours.toFixed(2),
+                    workDetails: document.getElementById('workDetails').value,
+                    rateType: document.getElementById('rateType').value,
+                    rateAmount: parseFloat(document.getElementById('rateAmount').value),
+                    createdBy: currentUser.username,
+                    created: new Date().toISOString()
+                };
+                
+                worksheets.push(worksheet);
+                localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                
+                // Close modal and refresh
+                bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide();
+                document.getElementById('worksheetForm').reset();
+                loadWorksheets();
+                loadDashboardData();
+            });
+            
+            // User form handler
+            document.getElementById('saveUser').addEventListener('click', function() {
+                const user = {
+                    username: document.getElementById('newUsername').value,
+                    password: document.getElementById('newPassword').value,
+                    fullName: document.getElementById('newFullName').value,
+                    role: document.getElementById('userRole').value,
+                    created: new Date().toISOString(),
+                    active: true
+                };
+                
+                users.push(user);
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                // Close modal and refresh
+                bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                document.getElementById('userForm').reset();
+                loadUsers();
+            });
+            
+            // Calculate total hours when times change
+            document.getElementById('inTime').addEventListener('change', calculateTotalHours);
+            document.getElementById('outTime').addEventListener('change', calculateTotalHours);
+            document.getElementById('lunchTime').addEventListener('change', calculateTotalHours);
+            
+            // Initialize modals
+            const clientModal = new bootstrap.Modal(document.getElementById('clientModal'));
+            const worksheetModal = new bootstrap.Modal(document.getElementById('worksheetModal'));
+            const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+            
+            // Set default date for worksheet
+            document.getElementById('workDate').valueAsDate = new Date();
+        });
+        
+        // Show tab function
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            document.getElementById(tabName).classList.remove('hidden');
+        }
+        
+        // Calculate total hours for worksheet
+        function calculateTotalHours() {
+            const inTime = document.getElementById('inTime').value;
+            const outTime = document.getElementById('outTime').value;
+            const lunchTime = parseInt(document.getElementById('lunchTime').value) || 0;
+            
+            if (inTime && outTime) {
+                const inDateTime = new Date(`2000-01-01T${inTime}`);
+                const outDateTime = new Date(`2000-01-01T${outTime}`);
+                let diffHours = (outDateTime - inDateTime) / (1000 * 60 * 60);
+                
+                // Subtract lunch time
+                diffHours -= lunchTime / 60;
+                
+                document.getElementById('totalHours').value = diffHours.toFixed(2) + ' hours';
+            }
+        }
+        
+        // Load dashboard data
+        function loadDashboardData() {
+            document.getElementById('totalClients').textContent = clients.length;
+            document.getElementById('activeWorksheets').textContent = worksheets.length;
+            document.getElementById('pendingInvoices').textContent = invoices.length;
+            
+            // Calculate outstanding amount
+            let totalOutstanding = 0;
+            invoices.forEach(inv => {
+                if (inv.status === 'pending') {
+                    totalOutstanding += inv.totalAmount;
+                }
+            });
+            document.getElementById('outstandingAmount').textContent = '₹' + totalOutstanding.toFixed(2);
+            
+            // Load recent worksheets
+            const recentWorksheets = worksheets.slice(-5).reverse();
+            const recentWorksheetsHtml = recentWorksheets.map(ws => `
+                <tr>
+                    <td>${new Date(ws.date).toLocaleDateString('en-IN')}</td>
+                    <td>${ws.clientName}</td>
+                    <td>${ws.craneNumber}</td>
+                    <td>${ws.totalHours}</td>
+                    <td><span class="badge bg-success">Completed</span></td>
+                </tr>
+            `).join('');
+            document.getElementById('recentWorksheets').innerHTML = recentWorksheetsHtml;
+            
+            // Load recent invoices
+            const recentInvoices = invoices.slice(-5).reverse();
+            const recentInvoicesHtml = recentInvoices.map(inv => `
+                <div class="invoice-item">
+                    <div class="d-flex justify-content-between">
+                        <strong>${inv.invoiceNumber}</strong>
+                        <span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span>
+                    </div>
+                    <div class="small">${inv.clientName}</div>
+                    <div class="small">₹${inv.totalAmount.toFixed(2)}</div>
+                    <div class="small text-muted">${new Date(inv.date).toLocaleDateString('en-IN')}</div>
+                </div>
+            `).join('');
+            document.getElementById('recentInvoices').innerHTML = recentInvoicesHtml;
+        }
+        
+        // Load clients
+        function loadClients() {
+            const clientTable = document.getElementById('clientTable');
+            const clientSelects = document.querySelectorAll('select[id$="Client"]');
+            
+            // Populate client table
+            clientTable.innerHTML = clients.map(client => `
+                <tr>
+                    <td>${client.name}</td>
+                    <td>${client.address}</td>
+                    <td>${client.state}</td>
+                    <td>${client.mobile}</td>
+                    <td>${client.gstNo || 'N/A'}</td>
+                    <td>${client.gstType === 'intra' ? 'Intra-State' : 'Inter-State'}</td>
+                    <td class="admin-only">
+                        <button class="btn btn-sm btn-danger" onclick="deleteClient(${client.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Populate client dropdowns
+            clientSelects.forEach(select => {
+                select.innerHTML = '<option value="">Select Client</option>' + 
+                    clients.map(client => `<option value="${client.id}">${client.name}</option>`).join('');
+            });
+        }
+        
+        // Load worksheets
+        function loadWorksheets() {
+            const worksheetTable = document.getElementById('worksheetTable');
+            
+            worksheetTable.innerHTML = worksheets.map(ws => `
+                <tr>
+                    <td>${new Date(ws.date).toLocaleDateString('en-IN')}</td>
+                    <td>${ws.clientName}</td>
+                    <td>${ws.craneNumber}</td>
+                    <td>${ws.inTime}</td>
+                    <td>${ws.outTime}</td>
+                    <td>${ws.totalHours}</td>
+                    <td>${ws.workDetails}</td>
+                    <td class="admin-only">
+                        <button class="btn btn-sm btn-danger" onclick="deleteWorksheet(${ws.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Load invoices
+        function loadInvoices() {
+            const invoiceHistory = document.getElementById('invoiceHistory');
+            
+            invoiceHistory.innerHTML = invoices.map(inv => `
+                <div class="invoice-item">
+                    <div class="d-flex justify-content-between">
+                        <strong>${inv.invoiceNumber}</strong>
+                        <span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span>
+                    </div>
+                    <div class="small">${inv.clientName}</div>
+                    <div class="small">₹${inv.totalAmount.toFixed(2)}</div>
+                    <div class="small text-muted">${new Date(inv.date).toLocaleDateString('en-IN')}</div>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice(${inv.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="markAsPaid(${inv.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteInvoice(${inv.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Load users
+        function loadUsers() {
+            const userTable = document.getElementById('userTable');
+            
+            userTable.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.fullName}</td>
+                    <td><span class="badge ${user.role === 'admin' ? 'bg-primary' : 'bg-secondary'}">${user.role}</span></td>
+                    <td>${new Date(user.created).toLocaleDateString('en-IN')}</td>
+                    <td><span class="badge ${user.active ? 'bg-success' : 'bg-danger'}">${user.active ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="toggleUserStatus('${user.username}')">
+                            <i class="fas ${user.active ? 'fa-ban' : 'fa-check'}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')" ${user.username === 'BE' ? 'disabled' : ''}>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Delete client
+        function deleteClient(id) {
+            if (confirm('Are you sure you want to delete this client?')) {
+                clients = clients.filter(c => c.id !== id);
+                localStorage.setItem('clients', JSON.stringify(clients));
+                loadClients();
+                loadDashboardData();
+            }
+        }
+        
+        // Delete worksheet
+        function deleteWorksheet(id) {
+            if (confirm('Are you sure you want to delete this worksheet?')) {
+                worksheets = worksheets.filter(ws => ws.id !== id);
+                localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                loadWorksheets();
+                loadDashboardData();
+            }
+        }
+        
+        // Delete invoice
+        function deleteInvoice(id) {
+            if (confirm('Are you sure you want to delete this invoice?')) {
+                invoices = invoices.filter(inv => inv.id !== id);
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                loadInvoices();
+                loadDashboardData();
+            }
+        }
+        
+        // Delete user
+        function deleteUser(username) {
+            if (username === 'BE') {
+                alert('Cannot delete the default admin user');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to delete this user?')) {
+                users = users.filter(u => u.username !== username);
+                localStorage.setItem('users', JSON.stringify(users));
+                loadUsers();
+            }
+        }
+        
+        // Toggle user status
+        function toggleUserStatus(username) {
+            if (username === 'BE') {
+                alert('Cannot deactivate the default admin user');
+                return;
+            }
+            
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.active = !user.active;
+                localStorage.setItem('users', JSON.stringify(users));
+                loadUsers();
+            }
+        }
+        
+        // View invoice
+        function viewInvoice(id) {
+            const invoice = invoices.find(inv => inv.id === id);
+            if (invoice) {
+                alert(`Invoice ${invoice.invoiceNumber}\nClient: ${invoice.clientName}\nAmount: ₹${invoice.totalAmount}\nStatus: ${invoice.status}`);
+            }
+        }
+        
+        // Mark invoice as paid
+        function markAsPaid(id) {
+            const invoice = invoices.find(inv => inv.id === id);
+            if (invoice) {
+                invoice.status = 'paid';
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                loadInvoices();
+                loadDashboardData();
+            }
+        }
+    </script>
+</body>
+</html>
