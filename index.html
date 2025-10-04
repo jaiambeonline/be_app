@@ -7,6 +7,7 @@
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -27,6 +28,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         
         .login-container {
@@ -35,7 +37,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             max-width: 400px;
-            width: 90%;
+            width: 100%;
         }
         
         .login-header {
@@ -137,6 +139,9 @@
             .main-content {
                 padding-bottom: 20px;
             }
+            body {
+                padding: 10px;
+            }
         }
 
         .modal-content {
@@ -149,6 +154,12 @@
             color: white;
             border-radius: 10px 10px 0 0;
         }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
     </style>
 </head>
 <body>
@@ -160,22 +171,60 @@
                 <p class="mb-0">Crane Service Management</p>
             </div>
             <div class="login-body">
-                <h4 class="text-center mb-4">Login to System</h4>
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="loginUsername" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="loginUsername" required placeholder="Enter your username">
+                <!-- Login Form -->
+                <div id="loginFormContainer">
+                    <h4 class="text-center mb-4">Welcome Back</h4>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="loginEmail" required placeholder="Enter your email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" required placeholder="Enter your password">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">
+                            Sign In
+                        </button>
+                    </form>
+                    <div class="text-center">
+                        <p class="mb-0">Don't have an account? 
+                            <a href="#" id="showRegister" class="text-decoration-none">Sign Up</a>
+                        </p>
                     </div>
-                    <div class="mb-3">
-                        <label for="loginPassword" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="loginPassword" required placeholder="Enter your password">
+                </div>
+
+                <!-- Register Form -->
+                <div id="registerFormContainer" class="hidden">
+                    <h4 class="text-center mb-4">Create Account</h4>
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="registerName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="registerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="registerEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="registerPassword" required minlength="6">
+                        </div>
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>First user becomes Admin automatically!</strong><br>
+                                Subsequent users will be created as Operators.
+                            </small>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3" id="registerBtn">
+                            Create Account
+                        </button>
+                    </form>
+                    <div class="text-center">
+                        <p class="mb-0">Already have an account? 
+                            <a href="#" id="showLogin" class="text-decoration-none">Sign In</a>
+                        </p>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">
-                        Sign In
-                    </button>
-                </form>
-                <div class="text-center">
-                    <p class="mb-1 text-muted small">First time? Use: admin / admin123</p>
                 </div>
             </div>
         </div>
@@ -494,8 +543,8 @@
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Username</th>
-                                                <th>Full Name</th>
+                                                <th>Name</th>
+                                                <th>Email</th>
                                                 <th>Role</th>
                                                 <th>Status</th>
                                                 <th>Actions</th>
@@ -619,16 +668,16 @@
                 <div class="modal-body">
                     <form id="userForm">
                         <div class="mb-3">
-                            <label for="newUsername" class="form-label">Username *</label>
-                            <input type="text" class="form-control" id="newUsername" required>
+                            <label for="userFullName" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="userFullName" required>
                         </div>
                         <div class="mb-3">
-                            <label for="newFullName" class="form-label">Full Name *</label>
-                            <input type="text" class="form-control" id="newFullName" required>
+                            <label for="userEmail" class="form-label">Email Address *</label>
+                            <input type="email" class="form-control" id="userEmail" required>
                         </div>
                         <div class="mb-3">
-                            <label for="newPassword" class="form-label">Password *</label>
-                            <input type="password" class="form-control" id="newPassword" required>
+                            <label for="userPassword" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="userPassword" required minlength="6">
                         </div>
                         <div class="mb-3">
                             <label for="userRole" class="form-label">Role *</label>
@@ -652,6 +701,7 @@
 
     <script>
         // 🔥 REPLACE THIS CONFIG WITH YOUR ACTUAL FIREBASE CONFIG 🔥
+        // Get this from Firebase Console → Project Settings → Your apps → Web app
         const firebaseConfig = {
             apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
             authDomain: "bhavishya-enterprise.firebaseapp.com",
@@ -662,14 +712,15 @@
         };
 
         // Initialize Firebase
-        let db;
+        let auth, db;
         try {
             firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
             db = firebase.firestore();
             console.log('Firebase initialized successfully');
         } catch (error) {
             console.error('Firebase initialization error:', error);
-            alert('Firebase configuration error. Please check your Firebase config.');
+            showError('Firebase configuration error. Please check your Firebase config.');
         }
 
         let currentUser = null;
@@ -685,25 +736,44 @@
             document.getElementById('loadingScreen').classList.add('hidden');
         }
 
+        // Show error message
+        function showError(message) {
+            alert('Error: ' + message);
+        }
+
         // Check if user is already logged in
         function checkExistingLogin() {
             showLoading();
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showAppScreen();
-                loadDashboardData();
-                loadClients();
-                loadWorksheets();
-                if (currentUser.role === 'admin') {
-                    loadInvoices();
-                    loadUsers();
-                    loadClientDropdown();
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    // User is signed in
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        if (userDoc.exists) {
+                            currentUser = { 
+                                uid: user.uid,
+                                ...userDoc.data()
+                            };
+                            showAppScreen();
+                            await loadDashboardData();
+                            await loadClients();
+                            await loadWorksheets();
+                            if (currentUser.role === 'admin') {
+                                await loadInvoices();
+                                await loadUsers();
+                                loadClientDropdown();
+                            }
+                        } else {
+                            await auth.signOut();
+                            showError('User account not found. Please register again.');
+                        }
+                    } catch (error) {
+                        console.error('Error loading user data:', error);
+                        showError('Error loading user data: ' + error.message);
+                    }
                 }
                 hideLoading();
-            } else {
-                hideLoading();
-            }
+            });
         }
 
         // Initialize the app
@@ -714,15 +784,15 @@
             document.getElementById('workDate').valueAsDate = new Date();
         });
 
-        // Login Form - FIXED VERSION
+        // Login Form
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('loginUsername').value;
+            const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const loginBtn = document.getElementById('loginBtn');
             
-            if (!username || !password) {
-                alert('Please enter username and password');
+            if (!email || !password) {
+                showError('Please enter email and password');
                 return;
             }
 
@@ -731,81 +801,87 @@
             loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing In...';
             
             try {
-                // First, check if this is the first user (no users in database)
-                const usersSnapshot = await db.collection('users').get();
-                
-                if (usersSnapshot.empty) {
-                    // First time setup - create admin user
-                    if (username === 'admin' && password === 'admin123') {
-                        const adminUser = {
-                            username: 'admin',
-                            name: 'Administrator',
-                            password: 'admin123',
-                            role: 'admin',
-                            createdAt: new Date().toISOString(),
-                            company: 'Bhavishya Enterprise'
-                        };
-                        
-                        const docRef = await db.collection('users').add(adminUser);
-                        currentUser = { id: docRef.id, ...adminUser };
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                        
-                        showAppScreen();
-                        await loadDashboardData();
-                        await loadClients();
-                        await loadWorksheets();
-                        await loadInvoices();
-                        await loadUsers();
-                        loadClientDropdown();
-                        
-                        alert('Welcome! Admin account created successfully.');
-                    } else {
-                        throw new Error('For first login, use: admin / admin123');
-                    }
-                } else {
-                    // Regular login - check user credentials
-                    let userFound = false;
-                    
-                    usersSnapshot.forEach(doc => {
-                        const user = doc.data();
-                        if (user.username === username && user.password === password) {
-                            currentUser = { id: doc.id, ...user };
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                            userFound = true;
-                        }
-                    });
-                    
-                    if (userFound) {
-                        showAppScreen();
-                        await loadDashboardData();
-                        await loadClients();
-                        await loadWorksheets();
-                        if (currentUser.role === 'admin') {
-                            await loadInvoices();
-                            await loadUsers();
-                            loadClientDropdown();
-                        }
-                    } else {
-                        throw new Error('Invalid username or password');
-                    }
-                }
+                await auth.signInWithEmailAndPassword(email, password);
+                // Success handled by auth state listener
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Login failed: ' + error.message);
+                showError('Login failed: ' + error.message);
             } finally {
-                hideLoading();
                 loginBtn.classList.remove('loading');
                 loginBtn.innerHTML = 'Sign In';
+            }
+        });
+
+        // Register Form
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const registerBtn = document.getElementById('registerBtn');
+            
+            if (!name || !email || !password) {
+                showError('Please fill all fields');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters long');
+                return;
+            }
+
+            showLoading();
+            registerBtn.classList.add('loading');
+            registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating Account...';
+            
+            try {
+                // Check if this is the first user (should be admin)
+                const usersSnapshot = await db.collection('users').get();
+                const role = usersSnapshot.empty ? 'admin' : 'operator';
+                
+                // Create user in Firebase Auth
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Create user document in Firestore
+                await db.collection('users').doc(user.uid).set({
+                    name: name,
+                    email: email,
+                    role: role,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    company: 'Bhavishya Enterprise'
+                });
+                
+                alert('Account created successfully! You are logged in as ' + role);
+                // Success handled by auth state listener
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError('Registration failed: ' + error.message);
+            } finally {
+                registerBtn.classList.remove('loading');
+                registerBtn.innerHTML = 'Create Account';
             }
         });
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('currentUser');
-                currentUser = null;
+                auth.signOut();
                 showAuthScreen();
             }
+        });
+
+        // Form Toggle
+        document.getElementById('showRegister').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('loginFormContainer').classList.add('hidden');
+            document.getElementById('registerFormContainer').classList.remove('hidden');
+        });
+
+        document.getElementById('showLogin').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('registerFormContainer').classList.add('hidden');
+            document.getElementById('loginFormContainer').classList.remove('hidden');
         });
 
         // Tab Navigation
@@ -831,12 +907,17 @@
         }
 
         function showAuthScreen() {
+            hideLoading();
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
             document.getElementById('loginForm').reset();
+            document.getElementById('registerForm').reset();
+            document.getElementById('loginFormContainer').classList.remove('hidden');
+            document.getElementById('registerFormContainer').classList.add('hidden');
         }
 
         function showAppScreen() {
+            hideLoading();
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
             document.getElementById('displayUser').textContent = currentUser.name;
@@ -848,8 +929,8 @@
             });
             
             // Set crane number for current user in worksheet form
-            if (currentUser) {
-                document.getElementById('craneNo').value = currentUser.username;
+            if (currentUser.role === 'operator') {
+                document.getElementById('craneNo').value = currentUser.name.split(' ')[0] || 'Operator';
             }
         }
 
@@ -861,7 +942,7 @@
             const clientGST = document.getElementById('clientGST').value;
             
             if (!clientName || !clientMobile || !clientAddress) {
-                alert('Please fill all required fields');
+                showError('Please fill all required fields');
                 return;
             }
             
@@ -871,8 +952,8 @@
                     mobile: clientMobile,
                     address: clientAddress,
                     gstNo: clientGST,
-                    createdBy: currentUser.id,
-                    createdAt: new Date().toISOString()
+                    createdBy: currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 // Close modal and reset form
@@ -885,7 +966,7 @@
                 
                 alert('Client added successfully!');
             } catch (error) {
-                alert('Error adding client: ' + error.message);
+                showError('Error adding client: ' + error.message);
             }
         });
 
@@ -899,7 +980,7 @@
             const workDetails = document.getElementById('workDetails').value;
             
             if (!clientName || !workDate || !totalHours || !craneNo || !amount) {
-                alert('Please fill all required fields');
+                showError('Please fill all required fields');
                 return;
             }
             
@@ -911,49 +992,52 @@
                     craneNo: craneNo,
                     amount: parseFloat(amount),
                     workDetails: workDetails,
-                    createdBy: currentUser.id,
-                    createdAt: new Date().toISOString()
+                    createdBy: currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 // Close modal and reset form
                 bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide();
                 document.getElementById('worksheetForm').reset();
                 document.getElementById('workDate').valueAsDate = new Date();
-                document.getElementById('craneNo').value = currentUser.username;
                 
                 loadWorksheets();
                 loadDashboardData();
                 
                 alert('Worksheet added successfully!');
             } catch (error) {
-                alert('Error adding worksheet: ' + error.message);
+                showError('Error adding worksheet: ' + error.message);
             }
         });
 
         // Save User
         document.getElementById('saveUserBtn').addEventListener('click', async () => {
             if (currentUser.role !== 'admin') {
-                alert('Only admin can add users');
+                showError('Only admin can add users');
                 return;
             }
             
-            const username = document.getElementById('newUsername').value;
-            const fullName = document.getElementById('newFullName').value;
-            const password = document.getElementById('newPassword').value;
-            const userRole = document.getElementById('userRole').value;
+            const fullName = document.getElementById('userFullName').value;
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+            const role = document.getElementById('userRole').value;
             
-            if (!username || !fullName || !password) {
-                alert('Please fill all required fields');
+            if (!fullName || !email || !password) {
+                showError('Please fill all required fields');
                 return;
             }
 
             try {
-                await db.collection('users').add({
-                    username: username,
+                // Create user in Firebase Auth
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Create user document in Firestore
+                await db.collection('users').doc(user.uid).set({
                     name: fullName,
-                    password: password,
-                    role: userRole,
-                    createdAt: new Date().toISOString(),
+                    email: email,
+                    role: role,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     company: 'Bhavishya Enterprise'
                 });
                 
@@ -963,9 +1047,9 @@
                 
                 loadUsers();
                 
-                alert('User added successfully!\nUsername: ' + username + '\nPassword: ' + password);
+                alert('User added successfully!\nEmail: ' + email + '\nPassword: ' + password);
             } catch (error) {
-                alert('Error adding user: ' + error.message);
+                showError('Error adding user: ' + error.message);
             }
         });
 
@@ -979,7 +1063,7 @@
                     worksheetsSnapshot = await db.collection('worksheets').get();
                 } else {
                     worksheetsSnapshot = await db.collection('worksheets')
-                        .where('createdBy', '==', currentUser.id)
+                        .where('createdBy', '==', currentUser.uid)
                         .get();
                 }
                 
@@ -1067,7 +1151,7 @@
                     worksheetsSnapshot = await db.collection('worksheets').get();
                 } else {
                     worksheetsSnapshot = await db.collection('worksheets')
-                        .where('createdBy', '==', currentUser.id)
+                        .where('createdBy', '==', currentUser.uid)
                         .get();
                 }
                 
@@ -1164,12 +1248,12 @@
                     const user = doc.data();
                     const row = `
                         <tr>
-                            <td>${user.username}</td>
                             <td>${user.name}</td>
+                            <td>${user.email}</td>
                             <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
                             <td><span class="badge bg-success">Active</span></td>
                             <td class="table-actions">
-                                ${doc.id !== currentUser.id ? `
+                                ${doc.id !== currentUser.uid ? `
                                     <button class="btn btn-sm btn-warning" onclick="editUser('${doc.id}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -1207,7 +1291,7 @@
             const toDate = document.getElementById('toDate').value;
             
             if (!clientName || !fromDate || !toDate) {
-                alert('Please select client and date range');
+                showError('Please select client and date range');
                 return;
             }
             
@@ -1222,7 +1306,7 @@
                     .get();
                 
                 if (worksheetsSnapshot.empty) {
-                    alert('No worksheets found for the selected period');
+                    showError('No worksheets found for the selected period');
                     return;
                 }
                 
@@ -1254,7 +1338,7 @@
                 
             } catch (error) {
                 console.error('Error importing worksheets:', error);
-                alert('Error importing worksheets: ' + error.message);
+                showError('Error importing worksheets: ' + error.message);
             }
         }
 
@@ -1263,7 +1347,7 @@
 
         async function generateInvoice() {
             if (selectedWorksheets.length === 0) {
-                alert('Please import worksheets first');
+                showError('Please import worksheets first');
                 return;
             }
             
@@ -1280,8 +1364,8 @@
                     totalAmount: totalAmount,
                     worksheets: selectedWorksheets,
                     status: 'pending',
-                    createdBy: currentUser.id,
-                    createdAt: new Date().toISOString()
+                    createdBy: currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 alert('Invoice generated successfully!\nInvoice Number: ' + invoiceNumber + '\nAmount: ₹' + totalAmount);
@@ -1291,7 +1375,7 @@
                 loadInvoices();
                 loadDashboardData();
             } catch (error) {
-                alert('Error generating invoice: ' + error.message);
+                showError('Error generating invoice: ' + error.message);
             }
         }
 
@@ -1318,7 +1402,7 @@
                         alert('Client deleted successfully!');
                     })
                     .catch(error => {
-                        alert('Error deleting client: ' + error.message);
+                        showError('Error deleting client: ' + error.message);
                     });
             }
         };
@@ -1336,7 +1420,7 @@
                         alert('Worksheet deleted successfully!');
                     })
                     .catch(error => {
-                        alert('Error deleting worksheet: ' + error.message);
+                        showError('Error deleting worksheet: ' + error.message);
                     });
             }
         };
@@ -1348,13 +1432,13 @@
         window.markInvoicePaid = function(invoiceId) {
             db.collection('invoices').doc(invoiceId).update({
                 status: 'paid',
-                paidAt: new Date().toISOString()
+                paidAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 loadInvoices();
                 loadDashboardData();
                 alert('Invoice marked as paid!');
             }).catch(error => {
-                alert('Error updating invoice: ' + error.message);
+                showError('Error updating invoice: ' + error.message);
             });
         };
 
@@ -1364,13 +1448,14 @@
 
         window.deleteUser = function(userId) {
             if (confirm('Are you sure you want to delete this user?')) {
+                // Delete user from Firebase Auth and Firestore
                 db.collection('users').doc(userId).delete()
                     .then(() => {
                         loadUsers();
                         alert('User deleted successfully!');
                     })
                     .catch(error => {
-                        alert('Error deleting user: ' + error.message);
+                        showError('Error deleting user: ' + error.message);
                     });
             }
         };
