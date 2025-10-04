@@ -27,6 +27,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         
         .login-container {
@@ -35,7 +36,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             max-width: 400px;
-            width: 90%;
+            width: 100%;
         }
         
         .login-header {
@@ -125,6 +126,24 @@
             display: none;
         }
         
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .worksheet-item {
+            border-left: 4px solid var(--secondary);
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .invoice-preview {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 display: none;
@@ -132,66 +151,45 @@
             .main-content {
                 padding-bottom: 80px;
             }
+            body {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Login/Register Screen -->
+    <!-- Login Screen -->
     <div id="authScreen" class="login-container">
         <div class="login-header">
             <h2><i class="fas fa-cogs"></i> Bhavishya Enterprise</h2>
             <p class="mb-0">Crane Service Management</p>
         </div>
         <div class="login-body">
-            <!-- Login Form -->
-            <div id="loginFormContainer">
-                <h4 class="text-center mb-4">Welcome Back</h4>
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="loginEmail" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="loginEmail" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="loginPassword" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="loginPassword" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 mb-3">Sign In</button>
-                </form>
-                <div class="text-center">
-                    <p class="mb-0">Don't have an account? 
-                        <a href="#" id="showRegister" class="text-decoration-none">Sign Up</a>
-                    </p>
+            <h4 class="text-center mb-4">Login to System</h4>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="loginUsername" class="form-label">Username / Crane No</label>
+                    <input type="text" class="form-control" id="loginUsername" required placeholder="Enter your username">
                 </div>
+                <div class="mb-3">
+                    <label for="loginPassword" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" required placeholder="Enter your password">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">
+                    Sign In
+                </button>
+            </form>
+            <div class="text-center">
+                <p class="mb-1 text-muted small">Contact admin for new account</p>
             </div>
+        </div>
+    </div>
 
-            <!-- Register Form -->
-            <div id="registerFormContainer" class="hidden">
-                <h4 class="text-center mb-4">Create Account</h4>
-                <form id="registerForm">
-                    <div class="mb-3">
-                        <label for="registerName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="registerName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="registerEmail" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="registerEmail" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="registerPassword" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="registerPassword" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="registerCompany" class="form-label">Company Name</label>
-                        <input type="text" class="form-control" id="registerCompany" value="Bhavishya Enterprise" readonly>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 mb-3">Create Account</button>
-                </form>
-                <div class="text-center">
-                    <p class="mb-0">Already have an account? 
-                        <a href="#" id="showLogin" class="text-decoration-none">Sign In</a>
-                    </p>
-                </div>
-            </div>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3"></div>
+            <p>Loading...</p>
         </div>
     </div>
 
@@ -239,7 +237,7 @@
                                     <i class="fas fa-clipboard-list"></i> Worksheets
                                 </a>
                             </li>
-                            <li class="nav-item">
+                            <li class="nav-item admin-only">
                                 <a class="nav-link text-white" href="#" data-tab="invoices">
                                     <i class="fas fa-file-invoice-dollar"></i> Invoices
                                 </a>
@@ -263,8 +261,8 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h5>Total Clients</h5>
-                                                <h2 id="totalClients">0</h2>
+                                                <h6>Total Clients</h6>
+                                                <h3 id="totalClients">0</h3>
                                             </div>
                                             <i class="fas fa-users fa-2x"></i>
                                         </div>
@@ -276,8 +274,8 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h5>Worksheets</h5>
-                                                <h2 id="totalWorksheets">0</h2>
+                                                <h6>My Worksheets</h6>
+                                                <h3 id="myWorksheets">0</h3>
                                             </div>
                                             <i class="fas fa-clipboard-list fa-2x"></i>
                                         </div>
@@ -289,8 +287,8 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h5>Invoices</h5>
-                                                <h2 id="totalInvoices">0</h2>
+                                                <h6>Total Invoices</h6>
+                                                <h3 id="totalInvoices">0</h3>
                                             </div>
                                             <i class="fas fa-file-invoice-dollar fa-2x"></i>
                                         </div>
@@ -302,8 +300,8 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h5>Revenue</h5>
-                                                <h2 id="totalRevenue">₹0</h2>
+                                                <h6>Revenue</h6>
+                                                <h3 id="totalRevenue">₹0</h3>
                                             </div>
                                             <i class="fas fa-rupee-sign fa-2x"></i>
                                         </div>
@@ -316,7 +314,7 @@
                             <div class="col-md-8">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h5 class="mb-0">Recent Worksheets</h5>
+                                        <h5 class="mb-0">My Recent Worksheets</h5>
                                     </div>
                                     <div class="card-body">
                                         <div id="recentWorksheets">
@@ -328,12 +326,18 @@
                             <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h5 class="mb-0">Recent Invoices</h5>
+                                        <h5 class="mb-0">Quick Actions</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div id="recentInvoices">
-                                            <p class="text-muted text-center">No invoices found</p>
-                                        </div>
+                                        <button class="btn btn-primary w-100 mb-2" onclick="switchTab('worksheets')">
+                                            <i class="fas fa-plus"></i> New Worksheet
+                                        </button>
+                                        <button class="btn btn-success w-100 mb-2" onclick="switchTab('clients')">
+                                            <i class="fas fa-user-plus"></i> Add Client
+                                        </button>
+                                        <button class="btn btn-info w-100 mb-2 admin-only" onclick="switchTab('invoices')">
+                                            <i class="fas fa-file-invoice"></i> Create Invoice
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -391,7 +395,7 @@
                                                 <th>Crane No</th>
                                                 <th>Hours</th>
                                                 <th>Amount</th>
-                                                <th>Status</th>
+                                                <th>Work Details</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -408,32 +412,68 @@
 
                     <!-- Invoices Tab -->
                     <div id="invoices" class="tab-content">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Invoice Management</h5>
-                                <button class="btn btn-primary" id="addInvoiceBtn">
-                                    <i class="fas fa-plus"></i> Create Invoice
-                                </button>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Invoice Creation</h5>
+                                        <div>
+                                            <button class="btn btn-success me-2" id="importWorksheetsBtn">
+                                                <i class="fas fa-download"></i> Import Monthly Worksheets
+                                            </button>
+                                            <button class="btn btn-primary" id="generateInvoiceBtn">
+                                                <i class="fas fa-file-invoice"></i> Generate Invoice
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="invoiceClient" class="form-label">Select Client</label>
+                                                <select class="form-select" id="invoiceClient">
+                                                    <option value="">Select Client</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="fromDate" class="form-label">From Date</label>
+                                                <input type="month" class="form-control" id="fromDate">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="toDate" class="form-label">To Date</label>
+                                                <input type="month" class="form-control" id="toDate">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Selected Worksheets for Invoice</h6>
+                                            </div>
+                                            <div class="card-body invoice-preview">
+                                                <div id="invoiceWorksheets">
+                                                    <p class="text-muted text-center">No worksheets selected</p>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <strong>Total Amount:</strong>
+                                                    <strong id="invoiceTotalAmount">₹0</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Invoice No</th>
-                                                <th>Client</th>
-                                                <th>Date</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="invoicesTable">
-                                            <tr>
-                                                <td colspan="6" class="text-center text-muted">No invoices found</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                            
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Invoice History</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="invoiceHistory">
+                                            <p class="text-muted text-center">No invoices found</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -444,7 +484,7 @@
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">User Management</h5>
-                                <button class="btn btn-primary" id="addUserBtn">
+                                <button class="btn btn-primary admin-only" id="addUserBtn">
                                     <i class="fas fa-plus"></i> Add User
                                 </button>
                             </div>
@@ -453,8 +493,8 @@
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Name</th>
-                                                <th>Email</th>
+                                                <th>Username</th>
+                                                <th>Full Name</th>
                                                 <th>Role</th>
                                                 <th>Status</th>
                                                 <th>Actions</th>
@@ -487,76 +527,109 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            alert('Firebase configuration error. Please check your Firebase config.');
+        }
+
         const auth = firebase.auth();
         const db = firebase.firestore();
 
         let currentUser = null;
+        let selectedWorksheets = [];
+
+        // Show loading screen
+        function showLoading() {
+            document.getElementById('loadingScreen').classList.remove('hidden');
+        }
+
+        // Hide loading screen
+        function hideLoading() {
+            document.getElementById('loadingScreen').classList.add('hidden');
+        }
 
         // Authentication State Listener
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    currentUser = { ...userDoc.data(), uid: user.uid };
-                    showAppScreen();
-                    loadDashboardData();
-                    loadClients();
-                    loadWorksheets();
-                    loadInvoices();
-                    if (currentUser.role === 'admin') {
-                        loadUsers();
+                showLoading();
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        currentUser = { ...userDoc.data(), uid: user.uid };
+                        showAppScreen();
+                        await loadDashboardData();
+                        await loadClients();
+                        await loadWorksheets();
+                        if (currentUser.role === 'admin') {
+                            await loadInvoices();
+                            await loadUsers();
+                            loadClientDropdown();
+                        }
+                    } else {
+                        await auth.signOut();
+                        alert('User account not found. Please contact admin.');
                     }
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                    alert('Error loading user data. Please try again.');
+                } finally {
+                    hideLoading();
                 }
             } else {
                 showAuthScreen();
+                hideLoading();
             }
         });
 
         // Login Form
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
+            const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
             
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (error) {
-                alert('Login failed: ' + error.message);
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
             }
-        });
 
-        // Register Form
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
+            loginBtn.classList.add('loading');
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing In...';
             
             try {
-                const usersSnapshot = await db.collection('users').get();
-                const role = usersSnapshot.empty ? 'admin' : 'operator';
+                // For demo - in production, you'd use Firebase Auth with custom tokens
+                // This is a simplified version using Firestore for authentication
+                const usersSnapshot = await db.collection('users')
+                    .where('username', '==', username)
+                    .where('password', '==', password)
+                    .get();
                 
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-                
-                await db.collection('users').doc(user.uid).set({
-                    name: name,
-                    email: email,
-                    role: role,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    company: 'Bhavishya Enterprise'
-                });
-                
-                alert('Account created successfully! You are logged in as ' + role);
+                if (!usersSnapshot.empty) {
+                    const userDoc = usersSnapshot.docs[0];
+                    const userData = userDoc.data();
+                    
+                    // Sign in with Firebase Auth (using email field as UID)
+                    await auth.signInWithEmailAndPassword(userData.email, password);
+                } else {
+                    throw new Error('Invalid username or password');
+                }
             } catch (error) {
-                alert('Registration failed: ' + error.message);
+                console.error('Login error:', error);
+                alert('Login failed: ' + error.message);
+            } finally {
+                loginBtn.classList.remove('loading');
+                loginBtn.innerHTML = 'Sign In';
             }
         });
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            auth.signOut();
+            if (confirm('Are you sure you want to logout?')) {
+                auth.signOut();
+            }
         });
 
         // Tab Navigation
@@ -589,6 +662,7 @@
         function showAuthScreen() {
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
+            document.getElementById('loginForm').reset();
         }
 
         function showAppScreen() {
@@ -597,33 +671,23 @@
             document.getElementById('displayUser').textContent = currentUser.name;
             document.getElementById('userRoleBadge').textContent = currentUser.role;
             
+            // Show/hide admin features
             document.querySelectorAll('.admin-only').forEach(el => {
                 el.style.display = currentUser.role === 'admin' ? '' : 'none';
             });
         }
 
-        // Form Toggle
-        document.getElementById('showRegister').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('loginFormContainer').classList.add('hidden');
-            document.getElementById('registerFormContainer').classList.remove('hidden');
-        });
-
-        document.getElementById('showLogin').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('registerFormContainer').classList.add('hidden');
-            document.getElementById('loginFormContainer').classList.remove('hidden');
-        });
-
         // Load Data Functions
         async function loadDashboardData() {
             try {
                 const clientsSnapshot = await db.collection('clients').get();
-                const worksheetsSnapshot = await db.collection('worksheets').get();
+                const worksheetsSnapshot = await db.collection('worksheets')
+                    .where('createdBy', '==', currentUser.uid)
+                    .get();
                 const invoicesSnapshot = await db.collection('invoices').get();
                 
                 document.getElementById('totalClients').textContent = clientsSnapshot.size;
-                document.getElementById('totalWorksheets').textContent = worksheetsSnapshot.size;
+                document.getElementById('myWorksheets').textContent = worksheetsSnapshot.size;
                 document.getElementById('totalInvoices').textContent = invoicesSnapshot.size;
                 
                 // Calculate total revenue
@@ -642,37 +706,17 @@
                 recentWorksheets.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
                 const recentWorksheetsHTML = recentWorksheets.slice(0, 5).map(ws => `
-                    <div class="border-bottom pb-2 mb-2">
+                    <div class="worksheet-item">
                         <div class="d-flex justify-content-between">
                             <strong>${ws.clientName}</strong>
                             <span class="badge bg-primary">${ws.craneNo}</span>
                         </div>
                         <div class="small">${ws.workDetails || 'No details'}</div>
-                        <div class="small text-muted">${new Date(ws.date).toLocaleDateString()} • ${ws.totalHours} hours</div>
+                        <div class="small text-muted">${new Date(ws.date).toLocaleDateString()} • ${ws.totalHours} hrs • ₹${ws.amount}</div>
                     </div>
                 `).join('');
                 
                 document.getElementById('recentWorksheets').innerHTML = recentWorksheetsHTML || '<p class="text-muted text-center">No worksheets found</p>';
-                
-                // Load recent invoices
-                const recentInvoices = [];
-                invoicesSnapshot.forEach(doc => {
-                    recentInvoices.push({ id: doc.id, ...doc.data() });
-                });
-                recentInvoices.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                const recentInvoicesHTML = recentInvoices.slice(0, 5).map(inv => `
-                    <div class="border-bottom pb-2 mb-2">
-                        <div class="d-flex justify-content-between">
-                            <strong>${inv.invoiceNumber}</strong>
-                            <span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span>
-                        </div>
-                        <div class="small">${inv.clientName}</div>
-                        <div class="small text-muted">${new Date(inv.date).toLocaleDateString()} • ₹${inv.totalAmount}</div>
-                    </div>
-                `).join('');
-                
-                document.getElementById('recentInvoices').innerHTML = recentInvoicesHTML || '<p class="text-muted text-center">No invoices found</p>';
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -702,9 +746,11 @@
                                 <button class="btn btn-sm btn-warning" onclick="editClient('${doc.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                ${currentUser.role === 'admin' ? `
                                 <button class="btn btn-sm btn-danger" onclick="deleteClient('${doc.id}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                ` : ''}
                             </td>
                         </tr>
                     `;
@@ -717,7 +763,15 @@
 
         async function loadWorksheets() {
             try {
-                const worksheetsSnapshot = await db.collection('worksheets').get();
+                let worksheetsSnapshot;
+                if (currentUser.role === 'admin') {
+                    worksheetsSnapshot = await db.collection('worksheets').get();
+                } else {
+                    worksheetsSnapshot = await db.collection('worksheets')
+                        .where('createdBy', '==', currentUser.uid)
+                        .get();
+                }
+                
                 const worksheetsTable = document.getElementById('worksheetsTable');
                 
                 if (worksheetsSnapshot.empty) {
@@ -735,14 +789,16 @@
                             <td>${worksheet.craneNo}</td>
                             <td>${worksheet.totalHours}</td>
                             <td>₹${worksheet.amount || 0}</td>
-                            <td><span class="badge bg-success">Completed</span></td>
+                            <td>${worksheet.workDetails || '-'}</td>
                             <td>
                                 <button class="btn btn-sm btn-info" onclick="viewWorksheet('${doc.id}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                ${currentUser.role === 'admin' ? `
                                 <button class="btn btn-sm btn-danger" onclick="deleteWorksheet('${doc.id}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                ` : ''}
                             </td>
                         </tr>
                     `;
@@ -756,38 +812,37 @@
         async function loadInvoices() {
             try {
                 const invoicesSnapshot = await db.collection('invoices').get();
-                const invoicesTable = document.getElementById('invoicesTable');
+                const invoiceHistory = document.getElementById('invoiceHistory');
                 
                 if (invoicesSnapshot.empty) {
-                    invoicesTable.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No invoices found</td></tr>';
+                    invoiceHistory.innerHTML = '<p class="text-muted text-center">No invoices found</p>';
                     return;
                 }
                 
-                invoicesTable.innerHTML = '';
+                let invoicesHTML = '';
                 invoicesSnapshot.forEach(doc => {
                     const invoice = doc.data();
-                    const row = `
-                        <tr>
-                            <td>${invoice.invoiceNumber}</td>
-                            <td>${invoice.clientName}</td>
-                            <td>${new Date(invoice.date).toLocaleDateString()}</td>
-                            <td>₹${invoice.totalAmount}</td>
-                            <td><span class="badge ${invoice.status === 'paid' ? 'bg-success' : 'bg-warning'}">${invoice.status}</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-info" onclick="viewInvoice('${doc.id}')">
+                    invoicesHTML += `
+                        <div class="worksheet-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>${invoice.invoiceNumber}</strong>
+                                <span class="badge ${invoice.status === 'paid' ? 'bg-success' : 'bg-warning'}">${invoice.status}</span>
+                            </div>
+                            <div class="small">${invoice.clientName}</div>
+                            <div class="small text-muted">${new Date(invoice.date).toLocaleDateString()} • ₹${invoice.totalAmount}</div>
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice('${doc.id}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-success" onclick="markInvoicePaid('${doc.id}')">
+                                <button class="btn btn-sm btn-outline-success" onclick="markInvoicePaid('${doc.id}')">
                                     <i class="fas fa-check"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteInvoice('${doc.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     `;
-                    invoicesTable.innerHTML += row;
                 });
+                
+                invoiceHistory.innerHTML = invoicesHTML;
             } catch (error) {
                 console.error('Error loading invoices:', error);
             }
@@ -810,12 +865,12 @@
                     const user = doc.data();
                     const row = `
                         <tr>
+                            <td>${user.username}</td>
                             <td>${user.name}</td>
-                            <td>${user.email}</td>
                             <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
                             <td><span class="badge bg-success">Active</span></td>
                             <td>
-                                ${user.uid !== currentUser.uid ? `
+                                ${doc.id !== currentUser.uid ? `
                                     <button class="btn btn-sm btn-warning" onclick="editUser('${doc.id}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -833,11 +888,23 @@
             }
         }
 
+        async function loadClientDropdown() {
+            const clientsSnapshot = await db.collection('clients').get();
+            const clientDropdown = document.getElementById('invoiceClient');
+            
+            clientDropdown.innerHTML = '<option value="">Select Client</option>';
+            clientsSnapshot.forEach(doc => {
+                const client = doc.data();
+                clientDropdown.innerHTML += `<option value="${client.name}">${client.name}</option>`;
+            });
+        }
+
         // Add Event Listeners for Buttons
         document.getElementById('addClientBtn').addEventListener('click', showAddClientModal);
         document.getElementById('addWorksheetBtn').addEventListener('click', showAddWorksheetModal);
-        document.getElementById('addInvoiceBtn').addEventListener('click', showAddInvoiceModal);
         document.getElementById('addUserBtn').addEventListener('click', showAddUserModal);
+        document.getElementById('importWorksheetsBtn').addEventListener('click', importMonthlyWorksheets);
+        document.getElementById('generateInvoiceBtn').addEventListener('click', generateInvoice);
 
         function showAddClientModal() {
             const clientName = prompt('Enter client name:');
@@ -857,6 +924,7 @@
             }).then(() => {
                 loadClients();
                 loadDashboardData();
+                if (currentUser.role === 'admin') loadClientDropdown();
                 alert('Client added successfully!');
             }).catch(error => {
                 alert('Error adding client: ' + error.message);
@@ -867,7 +935,7 @@
             const clientName = prompt('Enter client name:');
             if (!clientName) return;
             
-            const craneNo = prompt('Enter crane number:');
+            const craneNo = currentUser.username; // Use username as crane number
             const workDate = prompt('Enter work date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
             const totalHours = prompt('Enter total hours:');
             const amount = prompt('Enter amount:');
@@ -891,70 +959,130 @@
             });
         }
 
-        function showAddInvoiceModal() {
-            const clientName = prompt('Enter client name:');
-            if (!clientName) return;
-            
-            const invoiceNumber = 'INV-' + Date.now();
-            const amount = prompt('Enter invoice amount:');
-            const workDescription = prompt('Enter work description:') || '';
-            
-            db.collection('invoices').add({
-                invoiceNumber: invoiceNumber,
-                clientName: clientName,
-                date: new Date().toISOString().split('T')[0],
-                totalAmount: parseFloat(amount),
-                workDescription: workDescription,
-                status: 'pending',
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                loadInvoices();
-                loadDashboardData();
-                alert('Invoice created successfully!');
-            }).catch(error => {
-                alert('Error creating invoice: ' + error.message);
-            });
-        }
-
         function showAddUserModal() {
             if (currentUser.role !== 'admin') {
                 alert('Only admin can add users');
                 return;
             }
             
-            const userName = prompt('Enter user full name:');
-            if (!userName) return;
+            const username = prompt('Enter username (crane number):');
+            if (!username) return;
             
-            const userEmail = prompt('Enter user email:');
-            const userPassword = prompt('Enter temporary password:');
+            const fullName = prompt('Enter full name:');
+            const password = prompt('Enter password:');
             const userRole = prompt('Enter role (admin/operator):', 'operator');
             
-            // Create user in Firebase Auth
-            auth.createUserWithEmailAndPassword(userEmail, userPassword)
-                .then((userCredential) => {
-                    const user = userCredential.user;
+            if (!username || !fullName || !password) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            // Create user document
+            db.collection('users').add({
+                username: username,
+                name: fullName,
+                password: password,
+                role: userRole,
+                email: username + '@bhavishya.com', // Simple email for Firebase Auth
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                company: 'Bhavishya Enterprise'
+            })
+            .then(() => {
+                loadUsers();
+                alert('User added successfully!\nUsername: ' + username + '\nPassword: ' + password);
+            })
+            .catch(error => {
+                alert('Error adding user: ' + error.message);
+            });
+        }
+
+        async function importMonthlyWorksheets() {
+            const clientName = document.getElementById('invoiceClient').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            if (!clientName || !fromDate || !toDate) {
+                alert('Please select client and date range');
+                return;
+            }
+            
+            try {
+                const startDate = fromDate + '-01';
+                const endDate = toDate + '-31';
+                
+                const worksheetsSnapshot = await db.collection('worksheets')
+                    .where('clientName', '==', clientName)
+                    .where('date', '>=', startDate)
+                    .where('date', '<=', endDate)
+                    .get();
+                
+                if (worksheetsSnapshot.empty) {
+                    alert('No worksheets found for the selected period');
+                    return;
+                }
+                
+                selectedWorksheets = [];
+                let totalAmount = 0;
+                let worksheetsHTML = '';
+                
+                worksheetsSnapshot.forEach(doc => {
+                    const worksheet = { id: doc.id, ...doc.data() };
+                    selectedWorksheets.push(worksheet);
+                    totalAmount += worksheet.amount;
                     
-                    // Create user document
-                    return db.collection('users').doc(user.uid).set({
-                        name: userName,
-                        email: userEmail,
-                        role: userRole,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        company: 'Bhavishya Enterprise'
-                    });
-                })
-                .then(() => {
-                    loadUsers();
-                    alert('User added successfully!');
-                    // Sign out the new user and sign back in as current user
-                    auth.signOut().then(() => {
-                        auth.signInWithEmailAndPassword(currentUser.email, currentUser.password);
-                    });
-                })
-                .catch(error => {
-                    alert('Error adding user: ' + error.message);
+                    worksheetsHTML += `
+                        <div class="worksheet-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>${worksheet.date}</strong>
+                                <span class="badge bg-primary">${worksheet.craneNo}</span>
+                            </div>
+                            <div class="small">${worksheet.workDetails || 'No details'}</div>
+                            <div class="small text-muted">${worksheet.totalHours} hrs • ₹${worksheet.amount}</div>
+                        </div>
+                    `;
                 });
+                
+                document.getElementById('invoiceWorksheets').innerHTML = worksheetsHTML;
+                document.getElementById('invoiceTotalAmount').textContent = '₹' + totalAmount;
+                
+                alert(`Imported ${selectedWorksheets.length} worksheets. Total: ₹${totalAmount}`);
+                
+            } catch (error) {
+                console.error('Error importing worksheets:', error);
+                alert('Error importing worksheets: ' + error.message);
+            }
+        }
+
+        async function generateInvoice() {
+            if (selectedWorksheets.length === 0) {
+                alert('Please import worksheets first');
+                return;
+            }
+            
+            const clientName = document.getElementById('invoiceClient').value;
+            const totalAmount = selectedWorksheets.reduce((sum, ws) => sum + ws.amount, 0);
+            
+            const invoiceNumber = 'INV-' + new Date().getFullYear() + '-' + (Math.random() * 1000).toFixed(0);
+            
+            db.collection('invoices').add({
+                invoiceNumber: invoiceNumber,
+                clientName: clientName,
+                date: new Date().toISOString().split('T')[0],
+                totalAmount: totalAmount,
+                worksheets: selectedWorksheets,
+                status: 'pending',
+                createdBy: currentUser.uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert('Invoice generated successfully!\nInvoice Number: ' + invoiceNumber + '\nAmount: ₹' + totalAmount);
+                selectedWorksheets = [];
+                document.getElementById('invoiceWorksheets').innerHTML = '<p class="text-muted text-center">No worksheets selected</p>';
+                document.getElementById('invoiceTotalAmount').textContent = '₹0';
+                loadInvoices();
+                loadDashboardData();
+            }).catch(error => {
+                alert('Error generating invoice: ' + error.message);
+            });
         }
 
         // Global functions for action buttons
@@ -968,6 +1096,7 @@
                     .then(() => {
                         loadClients();
                         loadDashboardData();
+                        if (currentUser.role === 'admin') loadClientDropdown();
                         alert('Client deleted successfully!');
                     })
                     .catch(error => {
@@ -1011,20 +1140,6 @@
             });
         };
 
-        window.deleteInvoice = function(invoiceId) {
-            if (confirm('Are you sure you want to delete this invoice?')) {
-                db.collection('invoices').doc(invoiceId).delete()
-                    .then(() => {
-                        loadInvoices();
-                        loadDashboardData();
-                        alert('Invoice deleted successfully!');
-                    })
-                    .catch(error => {
-                        alert('Error deleting invoice: ' + error.message);
-                    });
-            }
-        };
-
         window.editUser = function(userId) {
             alert('Edit user functionality: ' + userId);
         };
@@ -1041,7 +1156,14 @@
                     });
             }
         };
+
+        // Initialize date fields
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const currentMonth = today.toISOString().slice(0, 7);
+            document.getElementById('fromDate').value = currentMonth;
+            document.getElementById('toDate').value = currentMonth;
+        });
     </script>
 </body>
 </html>
-
