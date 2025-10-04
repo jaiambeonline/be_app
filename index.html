@@ -7,7 +7,6 @@
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -28,6 +27,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            margin: 0;
         }
         
         .login-container {
@@ -77,7 +77,7 @@
         }
         
         .hidden {
-            display: none;
+            display: none !important;
         }
         
         .tab-content {
@@ -181,15 +181,17 @@
             </form>
             <div class="text-center">
                 <p class="mb-1 text-muted small">Contact admin for new account</p>
+                <p class="mb-0 text-muted small">Default: admin / admin123</p>
             </div>
         </div>
     </div>
 
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+    <div id="loadingScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999;">
         <div class="text-center">
-            <div class="spinner-border text-primary mb-3"></div>
-            <p>Loading...</p>
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5>Loading Application...</h5>
+            <p class="text-muted">Please wait while we initialize the system</p>
         </div>
     </div>
 
@@ -518,25 +520,33 @@
     <script>
         // 🔥 REPLACE THIS CONFIG WITH YOUR ACTUAL FIREBASE CONFIG 🔥
         const firebaseConfig = {
-            apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
+            apiKey: "AIzaSyC5Z7X6z8q9r0b1c2d3e4f5g6h7i8j9k0l1m",
             authDomain: "bhavishya-enterprise.firebaseapp.com",
             projectId: "bhavishya-enterprise",
-            storageBucket: "bhavishya-enterprise.firebasestorage.app",
-            messagingSenderId: "68829794521",
-            appId: "1:68829794521:web:2933f17847e5d043666ec8"
+            storageBucket: "bhavishya-enterprise.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abc123def456ghi789jkl0"
         };
 
         // Initialize Firebase
+        let db;
         try {
             firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
             console.log('Firebase initialized successfully');
+            hideLoading();
         } catch (error) {
             console.error('Firebase initialization error:', error);
-            alert('Firebase configuration error. Please check your Firebase config.');
+            document.getElementById('loadingScreen').innerHTML = `
+                <div class="text-center">
+                    <div class="alert alert-danger">
+                        <h4>Firebase Configuration Error</h4>
+                        <p>Please check your Firebase configuration</p>
+                        <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+                    </div>
+                </div>
+            `;
         }
-
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
         let currentUser = null;
         let selectedWorksheets = [];
@@ -551,37 +561,31 @@
             document.getElementById('loadingScreen').classList.add('hidden');
         }
 
-        // Authentication State Listener
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                showLoading();
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        currentUser = { ...userDoc.data(), uid: user.uid };
-                        showAppScreen();
-                        await loadDashboardData();
-                        await loadClients();
-                        await loadWorksheets();
-                        if (currentUser.role === 'admin') {
-                            await loadInvoices();
-                            await loadUsers();
-                            loadClientDropdown();
-                        }
-                    } else {
-                        await auth.signOut();
-                        alert('User account not found. Please contact admin.');
-                    }
-                } catch (error) {
-                    console.error('Error loading user data:', error);
-                    alert('Error loading user data. Please try again.');
-                } finally {
-                    hideLoading();
+        // Check if user is already logged in
+        function checkExistingLogin() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showAppScreen();
+                loadDashboardData();
+                loadClients();
+                loadWorksheets();
+                if (currentUser.role === 'admin') {
+                    loadInvoices();
+                    loadUsers();
+                    loadClientDropdown();
                 }
             } else {
                 showAuthScreen();
-                hideLoading();
             }
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            showLoading();
+            setTimeout(() => {
+                checkExistingLogin();
+            }, 1000);
         });
 
         // Login Form
@@ -600,8 +604,7 @@
             loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing In...';
             
             try {
-                // For demo - in production, you'd use Firebase Auth with custom tokens
-                // This is a simplified version using Firestore for authentication
+                // Check if user exists in Firestore
                 const usersSnapshot = await db.collection('users')
                     .where('username', '==', username)
                     .where('password', '==', password)
@@ -609,12 +612,54 @@
                 
                 if (!usersSnapshot.empty) {
                     const userDoc = usersSnapshot.docs[0];
-                    const userData = userDoc.data();
+                    currentUser = { 
+                        id: userDoc.id,
+                        ...userDoc.data()
+                    };
                     
-                    // Sign in with Firebase Auth (using email field as UID)
-                    await auth.signInWithEmailAndPassword(userData.email, password);
+                    // Save to localStorage
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    showAppScreen();
+                    await loadDashboardData();
+                    await loadClients();
+                    await loadWorksheets();
+                    if (currentUser.role === 'admin') {
+                        await loadInvoices();
+                        await loadUsers();
+                        loadClientDropdown();
+                    }
+                    
                 } else {
-                    throw new Error('Invalid username or password');
+                    // Check if this is first user (create admin)
+                    const allUsers = await db.collection('users').get();
+                    if (allUsers.empty && username === 'admin' && password === 'admin123') {
+                        // Create admin user
+                        const adminUser = {
+                            username: 'admin',
+                            name: 'Administrator',
+                            password: 'admin123',
+                            role: 'admin',
+                            createdAt: new Date().toISOString(),
+                            company: 'Bhavishya Enterprise'
+                        };
+                        
+                        const docRef = await db.collection('users').add(adminUser);
+                        currentUser = { id: docRef.id, ...adminUser };
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        
+                        showAppScreen();
+                        await loadDashboardData();
+                        await loadClients();
+                        await loadWorksheets();
+                        await loadInvoices();
+                        await loadUsers();
+                        loadClientDropdown();
+                        
+                        alert('Welcome! Admin account created successfully.');
+                    } else {
+                        throw new Error('Invalid username or password');
+                    }
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -628,7 +673,9 @@
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
             if (confirm('Are you sure you want to logout?')) {
-                auth.signOut();
+                localStorage.removeItem('currentUser');
+                currentUser = null;
+                showAuthScreen();
             }
         });
 
@@ -660,12 +707,14 @@
         }
 
         function showAuthScreen() {
+            hideLoading();
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
             document.getElementById('loginForm').reset();
         }
 
         function showAppScreen() {
+            hideLoading();
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
             document.getElementById('displayUser').textContent = currentUser.name;
@@ -681,9 +730,16 @@
         async function loadDashboardData() {
             try {
                 const clientsSnapshot = await db.collection('clients').get();
-                const worksheetsSnapshot = await db.collection('worksheets')
-                    .where('createdBy', '==', currentUser.uid)
-                    .get();
+                let worksheetsSnapshot;
+                
+                if (currentUser.role === 'admin') {
+                    worksheetsSnapshot = await db.collection('worksheets').get();
+                } else {
+                    worksheetsSnapshot = await db.collection('worksheets')
+                        .where('createdBy', '==', currentUser.id)
+                        .get();
+                }
+                
                 const invoicesSnapshot = await db.collection('invoices').get();
                 
                 document.getElementById('totalClients').textContent = clientsSnapshot.size;
@@ -768,7 +824,7 @@
                     worksheetsSnapshot = await db.collection('worksheets').get();
                 } else {
                     worksheetsSnapshot = await db.collection('worksheets')
-                        .where('createdBy', '==', currentUser.uid)
+                        .where('createdBy', '==', currentUser.id)
                         .get();
                 }
                 
@@ -870,7 +926,7 @@
                             <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
                             <td><span class="badge bg-success">Active</span></td>
                             <td>
-                                ${doc.id !== currentUser.uid ? `
+                                ${doc.id !== currentUser.id ? `
                                     <button class="btn btn-sm btn-warning" onclick="editUser('${doc.id}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -919,8 +975,8 @@
                 mobile: clientMobile,
                 address: clientAddress,
                 gstNo: clientGST,
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdBy: currentUser.id,
+                createdAt: new Date().toISOString()
             }).then(() => {
                 loadClients();
                 loadDashboardData();
@@ -948,8 +1004,8 @@
                 totalHours: parseFloat(totalHours),
                 amount: parseFloat(amount),
                 workDetails: workDetails,
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdBy: currentUser.id,
+                createdAt: new Date().toISOString()
             }).then(() => {
                 loadWorksheets();
                 loadDashboardData();
@@ -983,8 +1039,7 @@
                 name: fullName,
                 password: password,
                 role: userRole,
-                email: username + '@bhavishya.com', // Simple email for Firebase Auth
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: new Date().toISOString(),
                 company: 'Bhavishya Enterprise'
             })
             .then(() => {
@@ -1071,8 +1126,8 @@
                 totalAmount: totalAmount,
                 worksheets: selectedWorksheets,
                 status: 'pending',
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdBy: currentUser.id,
+                createdAt: new Date().toISOString()
             }).then(() => {
                 alert('Invoice generated successfully!\nInvoice Number: ' + invoiceNumber + '\nAmount: ₹' + totalAmount);
                 selectedWorksheets = [];
@@ -1130,7 +1185,7 @@
         window.markInvoicePaid = function(invoiceId) {
             db.collection('invoices').doc(invoiceId).update({
                 status: 'paid',
-                paidAt: firebase.firestore.FieldValue.serverTimestamp()
+                paidAt: new Date().toISOString()
             }).then(() => {
                 loadInvoices();
                 loadDashboardData();
