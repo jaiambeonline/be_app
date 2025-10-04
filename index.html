@@ -23,10 +23,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
             margin: 0;
         }
         
@@ -37,6 +33,7 @@
             overflow: hidden;
             max-width: 400px;
             width: 100%;
+            margin: 100px auto;
         }
         
         .login-header {
@@ -94,18 +91,6 @@
             min-height: calc(100vh - 56px);
         }
         
-        .mobile-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--primary);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            z-index: 1000;
-        }
-        
         .card {
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -126,11 +111,6 @@
             display: none;
         }
         
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        
         .worksheet-item {
             border-left: 4px solid var(--secondary);
             padding: 10px;
@@ -144,59 +124,72 @@
             overflow-y: auto;
         }
         
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .table-actions {
+            white-space: nowrap;
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 display: none;
             }
             .main-content {
-                padding-bottom: 80px;
+                padding-bottom: 20px;
             }
-            body {
-                padding: 10px;
-            }
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            border-radius: 10px 10px 0 0;
         }
     </style>
 </head>
 <body>
     <!-- Login Screen -->
-    <div id="authScreen" class="login-container">
-        <div class="login-header">
-            <h2><i class="fas fa-cogs"></i> Bhavishya Enterprise</h2>
-            <p class="mb-0">Crane Service Management</p>
-        </div>
-        <div class="login-body">
-            <h4 class="text-center mb-4">Login to System</h4>
-            <form id="loginForm">
-                <div class="mb-3">
-                    <label for="loginUsername" class="form-label">Username / Crane No</label>
-                    <input type="text" class="form-control" id="loginUsername" required placeholder="Enter your username">
+    <div id="authScreen">
+        <div class="login-container">
+            <div class="login-header">
+                <h2><i class="fas fa-cogs"></i> Bhavishya Enterprise</h2>
+                <p class="mb-0">Crane Service Management</p>
+            </div>
+            <div class="login-body">
+                <h4 class="text-center mb-4">Login to System</h4>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="loginUsername" required placeholder="Enter your username">
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">
+                        Sign In
+                    </button>
+                </form>
+                <div class="text-center">
+                    <p class="mb-1 text-muted small">Default: admin / admin123</p>
                 </div>
-                <div class="mb-3">
-                    <label for="loginPassword" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="loginPassword" required placeholder="Enter your password">
-                </div>
-                <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">
-                    Sign In
-                </button>
-            </form>
-            <div class="text-center">
-                <p class="mb-1 text-muted small">Contact admin for new account</p>
-                <p class="mb-0 text-muted small">Default: admin / admin123</p>
             </div>
         </div>
     </div>
 
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-        <div class="text-center">
-            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
-            <h5>Loading Application...</h5>
-            <p class="text-muted">Please wait while we initialize the system</p>
-        </div>
-    </div>
-
     <!-- Main Application -->
-    <div id="appScreen" class="hidden w-100" style="min-height: 100vh; background: #f8f9fa;">
+    <div id="appScreen" class="hidden">
         <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
             <div class="container-fluid">
@@ -209,7 +202,7 @@
                         <span class="user-badge" id="userRoleBadge">User</span>
                     </span>
                     <button class="btn btn-sm btn-light me-2 admin-only" id="userManagementBtn">
-                        <i class="fas fa-users-cog"></i>
+                        <i class="fas fa-users-cog"></i> Users
                     </button>
                     <button class="btn btn-sm btn-light" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -348,13 +341,14 @@
 
                     <!-- Clients Tab -->
                     <div id="clients" class="tab-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Client Management</h4>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">
+                                <i class="fas fa-plus"></i> Add New Client
+                            </button>
+                        </div>
+                        
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Client Management</h5>
-                                <button class="btn btn-primary" id="addClientBtn">
-                                    <i class="fas fa-plus"></i> Add Client
-                                </button>
-                            </div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-striped">
@@ -380,13 +374,14 @@
 
                     <!-- Worksheets Tab -->
                     <div id="worksheets" class="tab-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Worksheet Management</h4>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">
+                                <i class="fas fa-plus"></i> New Worksheet
+                            </button>
+                        </div>
+                        
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Worksheet Management</h5>
-                                <button class="btn btn-primary" id="addWorksheetBtn">
-                                    <i class="fas fa-plus"></i> New Worksheet
-                                </button>
-                            </div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-striped">
@@ -414,20 +409,21 @@
 
                     <!-- Invoices Tab -->
                     <div id="invoices" class="tab-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Invoice Management</h4>
+                            <div>
+                                <button class="btn btn-success me-2" id="importWorksheetsBtn">
+                                    <i class="fas fa-download"></i> Import Monthly Worksheets
+                                </button>
+                                <button class="btn btn-primary" id="generateInvoiceBtn">
+                                    <i class="fas fa-file-invoice"></i> Generate Invoice
+                                </button>
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="card">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">Invoice Creation</h5>
-                                        <div>
-                                            <button class="btn btn-success me-2" id="importWorksheetsBtn">
-                                                <i class="fas fa-download"></i> Import Monthly Worksheets
-                                            </button>
-                                            <button class="btn btn-primary" id="generateInvoiceBtn">
-                                                <i class="fas fa-file-invoice"></i> Generate Invoice
-                                            </button>
-                                        </div>
-                                    </div>
                                     <div class="card-body">
                                         <div class="row mb-3">
                                             <div class="col-md-6">
@@ -483,13 +479,14 @@
 
                     <!-- User Management Tab -->
                     <div id="users" class="tab-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>User Management</h4>
+                            <button class="btn btn-primary admin-only" data-bs-toggle="modal" data-bs-target="#userModal">
+                                <i class="fas fa-plus"></i> Add User
+                            </button>
+                        </div>
+                        
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">User Management</h5>
-                                <button class="btn btn-primary admin-only" id="addUserBtn">
-                                    <i class="fas fa-plus"></i> Add User
-                                </button>
-                            </div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-striped">
@@ -517,6 +514,140 @@
         </div>
     </div>
 
+    <!-- Client Modal -->
+    <div class="modal fade" id="clientModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="clientForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="clientName" class="form-label">Client Name *</label>
+                                    <input type="text" class="form-control" id="clientName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientMobile" class="form-label">Mobile Number *</label>
+                                    <input type="text" class="form-control" id="clientMobile" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="clientAddress" class="form-label">Address *</label>
+                                    <textarea class="form-control" id="clientAddress" rows="3" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientGST" class="form-label">GST Number (Optional)</label>
+                                    <input type="text" class="form-control" id="clientGST">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveClientBtn">Save Client</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worksheet Modal -->
+    <div class="modal fade" id="worksheetModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Worksheet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="worksheetForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="worksheetClient" class="form-label">Client Name *</label>
+                                    <input type="text" class="form-control" id="worksheetClient" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="workDate" class="form-label">Work Date *</label>
+                                    <input type="date" class="form-control" id="workDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="totalHours" class="form-label">Total Hours *</label>
+                                    <input type="number" class="form-control" id="totalHours" step="0.5" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="craneNo" class="form-label">Crane Number *</label>
+                                    <input type="text" class="form-control" id="craneNo" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">Amount (₹) *</label>
+                                    <input type="number" class="form-control" id="amount" step="0.01" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="workDetails" class="form-label">Work Details</label>
+                                    <textarea class="form-control" id="workDetails" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveWorksheetBtn">Save Worksheet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label for="newUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newFullName" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="newFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">Role *</label>
+                            <select class="form-select" id="userRole" required>
+                                <option value="operator">Operator</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveUserBtn">Save User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         // 🔥 REPLACE THIS CONFIG WITH YOUR ACTUAL FIREBASE CONFIG 🔥
         const firebaseConfig = {
@@ -534,32 +665,13 @@
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             console.log('Firebase initialized successfully');
-            hideLoading();
         } catch (error) {
             console.error('Firebase initialization error:', error);
-            document.getElementById('loadingScreen').innerHTML = `
-                <div class="text-center">
-                    <div class="alert alert-danger">
-                        <h4>Firebase Configuration Error</h4>
-                        <p>Please check your Firebase configuration</p>
-                        <button class="btn btn-primary" onclick="location.reload()">Retry</button>
-                    </div>
-                </div>
-            `;
+            alert('Firebase configuration error. Please check your Firebase config.');
         }
 
         let currentUser = null;
         let selectedWorksheets = [];
-
-        // Show loading screen
-        function showLoading() {
-            document.getElementById('loadingScreen').classList.remove('hidden');
-        }
-
-        // Hide loading screen
-        function hideLoading() {
-            document.getElementById('loadingScreen').classList.add('hidden');
-        }
 
         // Check if user is already logged in
         function checkExistingLogin() {
@@ -575,17 +687,20 @@
                     loadUsers();
                     loadClientDropdown();
                 }
-            } else {
-                showAuthScreen();
             }
         }
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            showLoading();
-            setTimeout(() => {
-                checkExistingLogin();
-            }, 1000);
+            checkExistingLogin();
+            
+            // Set current date for worksheet form
+            document.getElementById('workDate').valueAsDate = new Date();
+            
+            // Set crane number for current user
+            if (currentUser) {
+                document.getElementById('craneNo').value = currentUser.username;
+            }
         });
 
         // Login Form
@@ -688,11 +803,6 @@
             });
         });
 
-        // User Management Button
-        document.getElementById('userManagementBtn').addEventListener('click', () => {
-            switchTab('users');
-        });
-
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -707,14 +817,12 @@
         }
 
         function showAuthScreen() {
-            hideLoading();
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
             document.getElementById('loginForm').reset();
         }
 
         function showAppScreen() {
-            hideLoading();
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
             document.getElementById('displayUser').textContent = currentUser.name;
@@ -724,7 +832,126 @@
             document.querySelectorAll('.admin-only').forEach(el => {
                 el.style.display = currentUser.role === 'admin' ? '' : 'none';
             });
+            
+            // Set crane number for current user in worksheet form
+            document.getElementById('craneNo').value = currentUser.username;
         }
+
+        // Save Client
+        document.getElementById('saveClientBtn').addEventListener('click', async () => {
+            const clientName = document.getElementById('clientName').value;
+            const clientMobile = document.getElementById('clientMobile').value;
+            const clientAddress = document.getElementById('clientAddress').value;
+            const clientGST = document.getElementById('clientGST').value;
+            
+            if (!clientName || !clientMobile || !clientAddress) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            try {
+                await db.collection('clients').add({
+                    name: clientName,
+                    mobile: clientMobile,
+                    address: clientAddress,
+                    gstNo: clientGST,
+                    createdBy: currentUser.id,
+                    createdAt: new Date().toISOString()
+                });
+                
+                // Close modal and reset form
+                bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
+                document.getElementById('clientForm').reset();
+                
+                loadClients();
+                loadDashboardData();
+                if (currentUser.role === 'admin') loadClientDropdown();
+                
+                alert('Client added successfully!');
+            } catch (error) {
+                alert('Error adding client: ' + error.message);
+            }
+        });
+
+        // Save Worksheet
+        document.getElementById('saveWorksheetBtn').addEventListener('click', async () => {
+            const clientName = document.getElementById('worksheetClient').value;
+            const workDate = document.getElementById('workDate').value;
+            const totalHours = document.getElementById('totalHours').value;
+            const craneNo = document.getElementById('craneNo').value;
+            const amount = document.getElementById('amount').value;
+            const workDetails = document.getElementById('workDetails').value;
+            
+            if (!clientName || !workDate || !totalHours || !craneNo || !amount) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            try {
+                await db.collection('worksheets').add({
+                    clientName: clientName,
+                    date: workDate,
+                    totalHours: parseFloat(totalHours),
+                    craneNo: craneNo,
+                    amount: parseFloat(amount),
+                    workDetails: workDetails,
+                    createdBy: currentUser.id,
+                    createdAt: new Date().toISOString()
+                });
+                
+                // Close modal and reset form
+                bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide();
+                document.getElementById('worksheetForm').reset();
+                document.getElementById('workDate').valueAsDate = new Date();
+                document.getElementById('craneNo').value = currentUser.username;
+                
+                loadWorksheets();
+                loadDashboardData();
+                
+                alert('Worksheet added successfully!');
+            } catch (error) {
+                alert('Error adding worksheet: ' + error.message);
+            }
+        });
+
+        // Save User
+        document.getElementById('saveUserBtn').addEventListener('click', async () => {
+            if (currentUser.role !== 'admin') {
+                alert('Only admin can add users');
+                return;
+            }
+            
+            const username = document.getElementById('newUsername').value;
+            const fullName = document.getElementById('newFullName').value;
+            const password = document.getElementById('newPassword').value;
+            const userRole = document.getElementById('userRole').value;
+            
+            if (!username || !fullName || !password) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            try {
+                await db.collection('users').add({
+                    username: username,
+                    name: fullName,
+                    password: password,
+                    role: userRole,
+                    createdAt: new Date().toISOString(),
+                    company: 'Bhavishya Enterprise'
+                });
+                
+                // Close modal and reset form
+                bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                document.getElementById('userForm').reset();
+                
+                loadUsers();
+                
+                alert('User added successfully!\nUsername: ' + username + '\nPassword: ' + password);
+            } catch (error) {
+                alert('Error adding user: ' + error.message);
+            }
+        });
 
         // Load Data Functions
         async function loadDashboardData() {
@@ -798,7 +1025,7 @@
                             <td>${client.mobile}</td>
                             <td>${client.address}</td>
                             <td>${client.gstNo || 'N/A'}</td>
-                            <td>
+                            <td class="table-actions">
                                 <button class="btn btn-sm btn-warning" onclick="editClient('${doc.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -846,7 +1073,7 @@
                             <td>${worksheet.totalHours}</td>
                             <td>₹${worksheet.amount || 0}</td>
                             <td>${worksheet.workDetails || '-'}</td>
-                            <td>
+                            <td class="table-actions">
                                 <button class="btn btn-sm btn-info" onclick="viewWorksheet('${doc.id}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -925,7 +1152,7 @@
                             <td>${user.name}</td>
                             <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
                             <td><span class="badge bg-success">Active</span></td>
-                            <td>
+                            <td class="table-actions">
                                 ${doc.id !== currentUser.id ? `
                                     <button class="btn btn-sm btn-warning" onclick="editUser('${doc.id}')">
                                         <i class="fas fa-edit"></i>
@@ -955,101 +1182,8 @@
             });
         }
 
-        // Add Event Listeners for Buttons
-        document.getElementById('addClientBtn').addEventListener('click', showAddClientModal);
-        document.getElementById('addWorksheetBtn').addEventListener('click', showAddWorksheetModal);
-        document.getElementById('addUserBtn').addEventListener('click', showAddUserModal);
+        // Import Monthly Worksheets
         document.getElementById('importWorksheetsBtn').addEventListener('click', importMonthlyWorksheets);
-        document.getElementById('generateInvoiceBtn').addEventListener('click', generateInvoice);
-
-        function showAddClientModal() {
-            const clientName = prompt('Enter client name:');
-            if (!clientName) return;
-            
-            const clientMobile = prompt('Enter client mobile:');
-            const clientAddress = prompt('Enter client address:');
-            const clientGST = prompt('Enter GST No (optional):') || '';
-            
-            db.collection('clients').add({
-                name: clientName,
-                mobile: clientMobile,
-                address: clientAddress,
-                gstNo: clientGST,
-                createdBy: currentUser.id,
-                createdAt: new Date().toISOString()
-            }).then(() => {
-                loadClients();
-                loadDashboardData();
-                if (currentUser.role === 'admin') loadClientDropdown();
-                alert('Client added successfully!');
-            }).catch(error => {
-                alert('Error adding client: ' + error.message);
-            });
-        }
-
-        function showAddWorksheetModal() {
-            const clientName = prompt('Enter client name:');
-            if (!clientName) return;
-            
-            const craneNo = currentUser.username; // Use username as crane number
-            const workDate = prompt('Enter work date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-            const totalHours = prompt('Enter total hours:');
-            const amount = prompt('Enter amount:');
-            const workDetails = prompt('Enter work details:') || '';
-            
-            db.collection('worksheets').add({
-                clientName: clientName,
-                craneNo: craneNo,
-                date: workDate,
-                totalHours: parseFloat(totalHours),
-                amount: parseFloat(amount),
-                workDetails: workDetails,
-                createdBy: currentUser.id,
-                createdAt: new Date().toISOString()
-            }).then(() => {
-                loadWorksheets();
-                loadDashboardData();
-                alert('Worksheet added successfully!');
-            }).catch(error => {
-                alert('Error adding worksheet: ' + error.message);
-            });
-        }
-
-        function showAddUserModal() {
-            if (currentUser.role !== 'admin') {
-                alert('Only admin can add users');
-                return;
-            }
-            
-            const username = prompt('Enter username (crane number):');
-            if (!username) return;
-            
-            const fullName = prompt('Enter full name:');
-            const password = prompt('Enter password:');
-            const userRole = prompt('Enter role (admin/operator):', 'operator');
-            
-            if (!username || !fullName || !password) {
-                alert('Please fill all fields');
-                return;
-            }
-
-            // Create user document
-            db.collection('users').add({
-                username: username,
-                name: fullName,
-                password: password,
-                role: userRole,
-                createdAt: new Date().toISOString(),
-                company: 'Bhavishya Enterprise'
-            })
-            .then(() => {
-                loadUsers();
-                alert('User added successfully!\nUsername: ' + username + '\nPassword: ' + password);
-            })
-            .catch(error => {
-                alert('Error adding user: ' + error.message);
-            });
-        }
 
         async function importMonthlyWorksheets() {
             const clientName = document.getElementById('invoiceClient').value;
@@ -1108,6 +1242,9 @@
             }
         }
 
+        // Generate Invoice
+        document.getElementById('generateInvoiceBtn').addEventListener('click', generateInvoice);
+
         async function generateInvoice() {
             if (selectedWorksheets.length === 0) {
                 alert('Please import worksheets first');
@@ -1119,26 +1256,36 @@
             
             const invoiceNumber = 'INV-' + new Date().getFullYear() + '-' + (Math.random() * 1000).toFixed(0);
             
-            db.collection('invoices').add({
-                invoiceNumber: invoiceNumber,
-                clientName: clientName,
-                date: new Date().toISOString().split('T')[0],
-                totalAmount: totalAmount,
-                worksheets: selectedWorksheets,
-                status: 'pending',
-                createdBy: currentUser.id,
-                createdAt: new Date().toISOString()
-            }).then(() => {
+            try {
+                await db.collection('invoices').add({
+                    invoiceNumber: invoiceNumber,
+                    clientName: clientName,
+                    date: new Date().toISOString().split('T')[0],
+                    totalAmount: totalAmount,
+                    worksheets: selectedWorksheets,
+                    status: 'pending',
+                    createdBy: currentUser.id,
+                    createdAt: new Date().toISOString()
+                });
+                
                 alert('Invoice generated successfully!\nInvoice Number: ' + invoiceNumber + '\nAmount: ₹' + totalAmount);
                 selectedWorksheets = [];
                 document.getElementById('invoiceWorksheets').innerHTML = '<p class="text-muted text-center">No worksheets selected</p>';
                 document.getElementById('invoiceTotalAmount').textContent = '₹0';
                 loadInvoices();
                 loadDashboardData();
-            }).catch(error => {
+            } catch (error) {
                 alert('Error generating invoice: ' + error.message);
-            });
+            }
         }
+
+        // Initialize date fields
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const currentMonth = today.toISOString().slice(0, 7);
+            document.getElementById('fromDate').value = currentMonth;
+            document.getElementById('toDate').value = currentMonth;
+        });
 
         // Global functions for action buttons
         window.editClient = function(clientId) {
@@ -1211,15 +1358,6 @@
                     });
             }
         };
-
-        // Initialize date fields
-        document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date();
-            const currentMonth = today.toISOString().slice(0, 7);
-            document.getElementById('fromDate').value = currentMonth;
-            document.getElementById('toDate').value = currentMonth;
-        });
     </script>
 </body>
 </html>
-
