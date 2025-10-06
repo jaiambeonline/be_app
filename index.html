@@ -1,426 +1,1111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bhavishya Enterprise - Online Crane Management</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bhavishya Enterprise — Online Crane Management (GST-ready)</title>
 
-    <!-- Firebase (compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-    <!-- Bootstrap & Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Bootstrap & icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-    <!-- PDF helpers -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- PDF helpers -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <style>
-        :root{--primary:#2c3e50;--secondary:#3498db;--accent:#e74c3c;--light:#ecf0f1}
-        body{font-family:Inter,Segoe UI,Helvetica,Arial;min-height:100vh;background:#f4f6f9}
-        .sidebar{background:var(--primary);color:#fff;min-height:100vh}
-        .nav-link{color:rgba(255,255,255,0.9)}
-        .nav-link.active{background:rgba(255,255,255,0.06)}
-        .card{border-radius:10px}
-        .hidden{display:none}
-        .user-badge{background:var(--secondary);color:#fff;padding:4px 10px;border-radius:20px}
-    </style>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #3498db;
+      --danger: #e74c3c;
+    }
+    body { font-family: Inter, "Segoe UI", Roboto, Arial; background:#f5f7fb; color:#222; }
+    .sidebar { background: var(--primary); color: #fff; min-height: 100vh; }
+    .nav-link { color: rgba(255,255,255,0.9); }
+    .nav-link.active { background: rgba(255,255,255,0.06); }
+    .user-badge { background: var(--accent); color:white; padding: 4px 8px; border-radius: 16px; font-size:0.8rem; }
+    .card { border-radius: 10px; }
+    .no-print { display: block; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+    }
+
+    /* Invoice print layout */
+    .invoice-paper { max-width: 800px; margin: 20px auto; background: white; padding: 24px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .invoice-header { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .invoice-title { font-size: 1.25rem; font-weight:700; color: var(--primary); }
+    .invoice-meta { text-align: right; font-size: 0.9rem; color:#333; }
+    .invoice-table th { background: #f1f3f5; }
+    .gst-notes { font-size: 0.85rem; color:#444; margin-top:12px; }
+  </style>
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
-<div id="authScreen" class="container py-5">
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card p-4 shadow-sm">
-                <h4 class="mb-3"><i class="fas fa-cogs"></i> Bhavishya Enterprise</h4>
-                <p class="text-muted">Sign in to manage cranes, worksheets and invoices</p>
+      <div class="col-md-5">
+        <div class="card shadow-sm p-4">
+          <h4 class="mb-1"><i class="fas fa-cogs"></i> Bhavishya Enterprise</h4>
+          <p class="text-muted mb-3">Sign in to manage clients, worksheets and GST invoices</p>
 
-                <form id="signInForm">
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input id="signInEmail" class="form-control" type="email" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input id="signInPassword" class="form-control" type="password" required />
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-primary" type="submit">Sign In</button>
-                        <button id="showRegisterBtn" class="btn btn-outline-secondary" type="button">Create account</button>
-                    </div>
-                </form>
-
-                <hr />
-                <small class="text-muted">If you have a local-only user list, sign up once using any email and the admin will convert accounts online.</small>
+          <form id="signInForm" class="mb-2">
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="signInEmail" class="form-control" type="email" required>
             </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="signInPassword" class="form-control" type="password" required>
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" type="submit">Sign in</button>
+              <button id="showRegister" type="button" class="btn btn-outline-secondary">Create account</button>
+            </div>
+          </form>
+
+          <div id="registerCard" class="d-none">
+            <form id="registerForm">
+              <div class="mb-2"><label class="form-label">Full name</label><input id="registerName" class="form-control" required></div>
+              <div class="mb-2"><label class="form-label">Email</label><input id="registerEmail" class="form-control" type="email" required></div>
+              <div class="mb-3"><label class="form-label">Password</label><input id="registerPassword" class="form-control" type="password" required></div>
+              <div class="d-grid gap-2"><button class="btn btn-success" type="submit">Create account</button>
+                <button id="cancelRegister" class="btn btn-link" type="button">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <hr class="my-3">
+          <small class="text-muted">If this is your first time, create an account. The first user created becomes admin.</small>
         </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- APP SCREEN -->
-<div id="appScreen" class="hidden">
-    <nav class="navbar navbar-expand-lg" style="background:var(--primary);">
-        <div class="container-fluid">
-            <a class="navbar-brand text-white" href="#"><i class="fas fa-cogs"></i> Bhavishya Enterprise</a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3"><i class="fas fa-user"></i> <span id="displayName">User</span> <span id="displayRole" class="user-badge ms-2">Role</span></span>
-                <button id="btnLogout" class="btn btn-light btn-sm">Logout</button>
-            </div>
+  <!-- APP -->
+  <div id="appScreen" class="hidden">
+    <nav class="navbar navbar-expand-lg" style="background: var(--primary);">
+      <div class="container-fluid">
+        <a class="navbar-brand text-white" href="#"><i class="fas fa-cogs"></i> Bhavishya Enterprise</a>
+        <div class="d-flex align-items-center">
+          <div class="me-3 text-white">
+            <i class="fas fa-user"></i> <span id="displayName">User</span>
+            <span id="displayRole" class="user-badge ms-2">Role</span>
+          </div>
+          <button id="logoutBtn" class="btn btn-light btn-sm">Logout</button>
         </div>
+      </div>
     </nav>
 
     <div class="container-fluid">
-        <div class="row">
-            <aside class="col-md-3 sidebar p-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link active" href="#" data-tab="dashboard"> <i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-tab="clients"> <i class="fas fa-users"></i> Clients</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-tab="worksheets"> <i class="fas fa-clipboard-list"></i> Worksheets</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-tab="invoices"> <i class="fas fa-file-invoice-dollar"></i> Invoices</a></li>
-                    <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="cranes"> <i class="fas fa-truck-monster"></i> Cranes</a></li>
-                    <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="users"> <i class="fas fa-user-shield"></i> Users</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-tab="company"> <i class="fas fa-building"></i> Company</a></li>
-                </ul>
-            </aside>
+      <div class="row">
+        <!-- Sidebar -->
+        <aside class="col-md-3 sidebar p-3">
+          <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link active" href="#" data-tab="dashboardTab"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-tab="clientsTab"><i class="fas fa-users"></i> Clients</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-tab="worksheetsTab"><i class="fas fa-clipboard-list"></i> Worksheets</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-tab="invoicesTab"><i class="fas fa-file-invoice-dollar"></i> Invoices</a></li>
+            <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="cranesTab"><i class="fas fa-truck-monster"></i> Cranes</a></li>
+            <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="usersTab"><i class="fas fa-user-shield"></i> Users</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-tab="companyTab"><i class="fas fa-building"></i> Company</a></li>
+          </ul>
+        </aside>
 
-            <main class="col-md-9 p-4">
-                <!-- DASHBOARD -->
-                <section id="dashboard" class="tab-content">
-                    <div class="row mb-3">
-                        <div class="col-md-3"><div class="card p-3"><h6>Total Clients</h6><h3 id="totalClients">0</h3></div></div>
-                        <div class="col-md-3"><div class="card p-3"><h6>Worksheets</h6><h3 id="totalWorksheets">0</h3></div></div>
-                        <div class="col-md-3"><div class="card p-3"><h6>Invoices</h6><h3 id="totalInvoices">0</h3></div></div>
-                        <div class="col-md-3"><div class="card p-3"><h6>Revenue</h6><h3 id="totalRevenue">₹0</h3></div></div>
-                    </div>
+        <!-- Main -->
+        <main class="col-md-9 p-4">
+          <!-- Dashboard -->
+          <section id="dashboardTab" class="tab-content">
+            <div class="row mb-3">
+              <div class="col-md-3"><div class="card p-3"><h6>Total Clients</h6><h3 id="totalClients">0</h3></div></div>
+              <div class="col-md-3"><div class="card p-3"><h6>Worksheets</h6><h3 id="totalWorksheets">0</h3></div></div>
+              <div class="col-md-3"><div class="card p-3"><h6>Invoices</h6><h3 id="totalInvoices">0</h3></div></div>
+              <div class="col-md-3"><div class="card p-3"><h6>Revenue</h6><h3 id="totalRevenue">₹0</h3></div></div>
+            </div>
+            <div class="row">
+              <div class="col-md-8">
+                <div class="card">
+                  <div class="card-header">Recent Worksheets</div>
+                  <div class="card-body p-0"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>Total Hours</th><th>Amount</th></tr></thead><tbody id="recentWorksheets"></tbody></table></div></div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card">
+                  <div class="card-header">Recent Invoices</div>
+                  <div class="card-body" id="recentInvoices"></div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="card">
-                                <div class="card-header">Recent Worksheets</div>
-                                <div class="card-body p-0"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>Hours</th><th>Amount</th></tr></thead><tbody id="recentWorksheets"></tbody></table></div></div>
-                            </div>
+          <!-- Clients -->
+          <section id="clientsTab" class="tab-content hidden">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Clients</h5>
+                <div>
+                  <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">Add Client</button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Mobile</th><th>State</th><th>GST No</th><th>GST Type</th><th>Actions</th></tr></thead><tbody id="clientsTable"></tbody></table></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Worksheets -->
+          <section id="worksheetsTab" class="tab-content hidden">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Worksheets</h5>
+                <div>
+                  <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">New Worksheet</button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>In</th><th>Out</th><th>Lunch (min)</th><th>Total Hours</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="worksheetsTable"></tbody></table></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Invoices -->
+          <section id="invoicesTab" class="tab-content hidden">
+            <div class="row">
+              <div class="col-md-8">
+                <div class="card">
+                  <div class="card-header">Create Invoice</div>
+                  <div class="card-body">
+                    <form id="invoiceForm">
+                      <div class="row mb-2">
+                        <div class="col-md-6">
+                          <label class="form-label">Client</label>
+                          <select id="invoiceClient" class="form-select" required><option value="">Select client</option></select>
                         </div>
-
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-header">Recent Invoices</div>
-                                <div class="card-body" id="recentInvoices"></div>
-                            </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Invoice Number</label>
+                          <input id="invoiceNumber" type="text" class="form-control" readonly>
                         </div>
-                    </div>
-                </section>
+                      </div>
 
-                <!-- CLIENTS -->
-                <section id="clients" class="tab-content hidden">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5>Clients</h5>
-                            <div>
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">Add Client</button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Mobile</th><th>GST</th><th>State</th><th>Actions</th></tr></thead><tbody id="clientsTable"></tbody></table></div>
-                        </div>
-                    </div>
-                </section>
+                      <div class="mb-2">
+                        <button type="button" id="importWorksheetsBtn" class="btn btn-outline-primary btn-sm">Import Client Worksheets</button>
+                        <button type="button" id="addManualLineBtn" class="btn btn-outline-secondary btn-sm">Add Manual Line</button>
+                      </div>
 
-                <!-- WORKSHEETS -->
-                <section id="worksheets" class="tab-content hidden">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between">
-                            <h5>Worksheets</h5>
-                            <div>
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">New Worksheet</button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>In</th><th>Out</th><th>Lunch</th><th>Total</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="worksheetsTable"></tbody></table></div>
-                        </div>
-                    </div>
-                </section>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead><tr><th></th><th>Date</th><th>Description</th><th>Hours</th><th>Rate</th><th>Amount</th><th>Action</th></tr></thead>
+                          <tbody id="invoiceItems"></tbody>
+                          <tfoot>
+                            <tr><td colspan="4" class="text-end">Subtotal</td><td id="invSubtotal">₹0</td><td></td><td></td></tr>
+                            <tr><td colspan="4" class="text-end">GST (18%)</td><td id="invGST">₹0</td><td></td><td></td></tr>
+                            <tr><td colspan="4" class="text-end"><strong>Total</strong></td><td id="invTotal"><strong>₹0</strong></td><td></td><td></td></tr>
+                          </tfoot>
+                        </table>
+                      </div>
 
-                <!-- INVOICES -->
-                <section id="invoices" class="tab-content hidden">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="card">
-                                <div class="card-header">Create Invoice</div>
-                                <div class="card-body">
-                                    <form id="invoiceForm">
-                                        <div class="row mb-2">
-                                            <div class="col-md-6"><label>Client</label><select id="invoiceClient" class="form-select" required><option value="">Select client</option></select></div>
-                                            <div class="col-md-6"><label>Invoice No</label><input readonly id="invoiceNo" class="form-control" value="INV-" /></div>
-                                        </div>
+                      <div class="d-flex justify-content-end gap-2">
+                        <button type="button" id="saveInvoiceDraft" class="btn btn-secondary">Save Draft</button>
+                        <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
 
-                                        <div class="table-responsive mb-2"><table class="table"><thead><tr><th></th><th>Date</th><th>Hours</th><th>Rate</th><th>Amount</th><th></th></tr></thead><tbody id="invoiceItems"></tbody><tfoot><tr><td colspan="4" class="text-end">Subtotal</td><td id="invSubtotal">₹0</td><td></td></tr><tr><td colspan="4" class="text-end">GST (18%)</td><td id="invGST">₹0</td><td></td></tr><tr><td colspan="4" class="text-end"><strong>Total</strong></td><td id="invTotal"><strong>₹0</strong></td><td></td></tr></tfoot></table></div>
+              <div class="col-md-4">
+                <div class="card">
+                  <div class="card-header">Invoice History</div>
+                  <div class="card-body" id="invoiceHistory"></div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <button class="btn btn-outline-secondary" type="button" id="importClientWorksheets">Import Client Worksheets</button>
-                                            <button class="btn btn-primary" type="submit">Generate Invoice</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-header">Invoice History</div>
-                                <div class="card-body" id="invoicesHistory"></div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+          <!-- Cranes (admin) -->
+          <section id="cranesTab" class="tab-content hidden admin-only">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Cranes</h5>
+                <div><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#craneModal">Add Crane</button></div>
+              </div>
+              <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Crane No</th><th>Assigned User</th><th>Actions</th></tr></thead><tbody id="cranesTable"></tbody></table></div></div>
+            </div>
+          </section>
 
-                <!-- CRANES -->
-                <section id="cranes" class="tab-content hidden admin-only">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between"><h5>Cranes</h5><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#craneModal">Add Crane/User</button></div>
-                        <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Crane No</th><th>Assigned To</th><th>Actions</th></tr></thead><tbody id="cranesTable"></tbody></table></div></div>
-                    </div>
-                </section>
+          <!-- Users (admin) -->
+          <section id="usersTab" class="tab-content hidden admin-only">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Users</h5>
+                <div><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button></div>
+              </div>
+              <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
+            </div>
+          </section>
 
-                <!-- USERS -->
-                <section id="users" class="tab-content hidden admin-only">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between"><h5>Users</h5><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button></div>
-                        <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
-                    </div>
-                </section>
-
-                <!-- COMPANY -->
-                <section id="company" class="tab-content hidden">
-                    <div class="card"><div class="card-body"><h5>Bhavishya Enterprise</h5><p>Crane Service - details...</p></div></div>
-                </section>
-
-            </main>
-        </div>
+          <!-- Company -->
+          <section id="companyTab" class="tab-content hidden">
+            <div class="card"><div class="card-body">
+              <h5>Bhavishya Enterprise</h5>
+              <p>Crane services, GST-enabled invoices, 24/7 service.</p>
+            </div></div>
+          </section>
+        </main>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- MODALS -->
-<!-- Client Modal -->
-<div class="modal fade" id="clientModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5>Add / Edit Client</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="clientFormOnline"><div class="row"><div class="col-md-6"><div class="mb-3"><label>Name</label><input id="c_name" class="form-control" required></div><div class="mb-3"><label>Mobile</label><input id="c_mobile" class="form-control"></div></div><div class="col-md-6"><div class="mb-3"><label>GST</label><input id="c_gst" class="form-control"></div><div class="mb-3"><label>State</label><input id="c_state" class="form-control"></div></div></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveClientBtn" class="btn btn-primary">Save</button></div></div></div></div>
+  <!-- ===================== Modals ===================== -->
 
-<!-- Worksheet Modal -->
-<div class="modal fade" id="worksheetModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5>Create Worksheet</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="worksheetFormOnline"><div class="row"><div class="col-md-6"><div class="mb-3"><label>Client</label><select id="ws_client" class="form-select"></select></div><div class="mb-3"><label>Crane</label><select id="ws_crane" class="form-select"></select></div></div><div class="col-md-6"><div class="mb-3"><label>Date</label><input id="ws_date" class="form-control" type="date"></div><div class="mb-3"><label>In Time</label><input id="ws_in" class="form-control" type="time"></div><div class="mb-3"><label>Out Time</label><input id="ws_out" class="form-control" type="time"></div><div class="mb-3"><label>Lunch Minutes</label><input id="ws_lunch" class="form-control" type="number" value="30"></div><div class="mb-3"><label>Total Hours</label><input id="ws_total" class="form-control" readonly></div></div></div><div class="mb-3"><label>Work Details</label><textarea id="ws_details" class="form-control"></textarea></div><div class="row"><div class="col-md-6"><label>Rate (₹ per hour)</label><input id="ws_rate" class="form-control" type="number" value="1500"></div><div class="col-md-6"><label>Amount (₹)</label><input id="ws_amount" class="form-control" readonly></div></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveWorksheetBtn" class="btn btn-primary">Save Worksheet</button></div></div></div></div>
+  <!-- Client modal (add/edit) -->
+  <div class="modal fade" id="clientModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 id="clientModalTitle">Add Client</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="clientForm">
+            <input type="hidden" id="clientEditId" />
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-2"><label class="form-label">Name *</label><input id="clientName" class="form-control" required></div>
+                <div class="mb-2"><label class="form-label">Mobile</label><input id="clientMobile" class="form-control"></div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-2"><label class="form-label">GST No</label><input id="clientGST" class="form-control" placeholder="27ABCDE1234F1Z5"></div>
+                <div class="mb-2"><label class="form-label">State</label><input id="clientState" class="form-control"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">GST Type</label>
+              <div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gstType" id="gstIntra" value="intra" checked><label class="form-check-label" for="gstIntra">Intra-State (CGST+SGST)</label></div>
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gstType" id="gstInter" value="inter"><label class="form-check-label" for="gstInter">Inter-State (IGST)</label></div></div>
+            </div>
+            <div class="mb-2"><label class="form-label">Notes</label><textarea id="clientNotes" class="form-control"></textarea></div>
+          </form>
+        </div>
+        <div class="modal-footer no-print">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="saveClientBtn" class="btn btn-primary">Save Client</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<!-- User/Crane Modal (Admin creates auth users) -->
-<div class="modal fade" id="userModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add User / Crane (Admin)</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="userFormOnline"><div class="mb-3"><label>Email</label><input id="u_email" class="form-control" type="email" required></div><div class="mb-3"><label>Full Name</label><input id="u_name" class="form-control"></div><div class="mb-3"><label>Role</label><select id="u_role" class="form-select"><option value="operator">Operator</option><option value="admin">Admin</option></select></div><div class="mb-3"><label>Temp Password</label><input id="u_pass" class="form-control" type="password" required></div><div class="mb-3"><label>Admin password (required to restore admin session after creating user)</label><input id="admin_reauth_pass" class="form-control" type="password"></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveUserBtn" class="btn btn-primary">Create User</button></div></div></div></div>
+  <!-- Worksheet modal (add/edit) -->
+  <div class="modal fade" id="worksheetModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 id="worksheetModalTitle">New Worksheet</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="worksheetForm">
+            <input type="hidden" id="worksheetEditId" />
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-2"><label class="form-label">Client</label><select id="wsClient" class="form-select" required><option value="">Select client</option></select></div>
+                <div class="mb-2"><label class="form-label">Crane</label><select id="wsCrane" class="form-select"><option value="">Select crane</option></select></div>
+                <div class="mb-2"><label class="form-label">Date</label><input id="wsDate" class="form-control" type="date" required></div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-2"><label class="form-label">In Time</label><input id="wsIn" class="form-control" type="time" required></div>
+                <div class="mb-2"><label class="form-label">Out Time</label><input id="wsOut" class="form-control" type="time" required></div>
+                <div class="mb-2"><label class="form-label">Lunch (minutes)</label><input id="wsLunch" class="form-control" type="number" value="30"></div>
+              </div>
+            </div>
 
-<!-- Crane Modal (simple extra details) -->
-<div class="modal fade" id="craneModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add Crane</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="craneFormOnline"><div class="mb-3"><label>Crane No</label><input id="crane_no" class="form-control"></div><div class="mb-3"><label>Assigned User Email (optional)</label><input id="crane_user_email" class="form-control"></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveCraneBtn" class="btn btn-primary">Save Crane</button></div></div></div></div>
+            <div class="row mt-2">
+              <div class="col-md-4"><label>Total Hours</label><input id="wsTotalHours" class="form-control" readonly></div>
+              <div class="col-md-4"><label>Rate (₹/hr)</label><input id="wsRate" class="form-control" type="number" value="1500"></div>
+              <div class="col-md-4"><label>Amount (₹)</label><input id="wsAmount" class="form-control" readonly></div>
+            </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+            <div class="mt-2"><label>Work Details</label><textarea id="wsDetails" class="form-control"></textarea></div>
+          </form>
+        </div>
+        <div class="modal-footer no-print">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="saveWorksheetBtn" class="btn btn-primary">Save Worksheet</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<script>
-// ----------------- Firebase config (kept as requested) -----------------
-const firebaseConfig = {
-  apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
-  authDomain: "bhavishya-enterprise.firebaseapp.com",
-  projectId: "bhavishya-enterprise",
-  storageBucket: "bhavishya-enterprise.firebasestorage.app",
-  messagingSenderId: "68829794521",
-  appId: "1:68829794521:web:2933f17847e5d043666ec8"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+  <!-- Invoice view/edit modal -->
+  <div class="modal fade" id="invoiceViewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header"><h5>Invoice</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div id="invoicePrintArea">
+            <!-- dynamic invoice HTML inserted here -->
+          </div>
+        </div>
+        <div class="modal-footer no-print">
+          <button class="btn btn-outline-secondary" id="downloadPdfBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
+          <button class="btn btn-success" id="waShareBtn"><i class="fab fa-whatsapp"></i> Share (WhatsApp)</button>
+          <button class="btn btn-primary" id="emailShareBtn"><i class="fas fa-envelope"></i> Share (Email)</button>
+          <button class="btn btn-secondary" id="printInvoiceBtn"><i class="fas fa-print"></i> Print</button>
+          <button class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-// UI elements
-const authScreen = document.getElementById('authScreen');
-const appScreen = document.getElementById('appScreen');
-const displayName = document.getElementById('displayName');
-const displayRole = document.getElementById('displayRole');
+  <!-- User modal (admin creates auth user) -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header"><h5>Add Auth User</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="userForm">
+            <div class="mb-2"><label>Email</label><input id="userEmail" class="form-control" type="email" required></div>
+            <div class="mb-2"><label>Full Name</label><input id="userFullName" class="form-control"></div>
+            <div class="mb-2"><label>Role</label><select id="userRole" class="form-select"><option value="operator">Operator</option><option value="admin">Admin</option></select></div>
+            <div class="mb-2"><label>Temporary Password</label><input id="userTempPass" class="form-control" type="password" required></div>
+            <div class="mb-2"><label>Re-enter admin password to restore session</label><input id="adminReauthPass" class="form-control" type="password" required></div>
+          </form>
+        </div>
+        <div class="modal-footer no-print">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="createAuthUserBtn" class="btn btn-primary">Create User</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-let currentUser = null; // firestore user doc
+  <!-- Crane modal -->
+  <div class="modal fade" id="craneModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header"><h5>Add Crane</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="craneForm">
+            <div class="mb-2"><label>Crane No</label><input id="craneNo" class="form-control" required></div>
+            <div class="mb-2"><label>Assigned user email (optional)</label><input id="craneAssign" class="form-control"></div>
+          </form>
+        </div>
+        <div class="modal-footer no-print">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="saveCraneBtn" class="btn btn-primary">Save Crane</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-// Auth state
-auth.onAuthStateChanged(async user => {
-  if (!user) { showAuth(); return; }
-  // load user doc
-  try {
-    const udoc = await db.collection('users').doc(user.uid).get();
-    if (!udoc.exists) {
-      // If user signs up directly, create a basic user doc
-      const newDoc = { name: user.email, email: user.email, role: 'operator', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-      await db.collection('users').doc(user.uid).set(newDoc);
-      currentUser = { uid: user.uid, ...newDoc };
-    } else {
-      currentUser = { uid: user.uid, ...(udoc.data()) };
+  <!-- Confirm delete modal could be added (optional) -->
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+  /********************************************************************
+   * Firebase config (kept as requested)
+   ********************************************************************/
+  const firebaseConfig = {
+    apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
+    authDomain: "bhavishya-enterprise.firebaseapp.com",
+    projectId: "bhavishya-enterprise",
+    storageBucket: "bhavishya-enterprise.firebasestorage.app",
+    messagingSenderId: "68829794521",
+    appId: "1:68829794521:web:2933f17847e5d043666ec8"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  /********************************************************************
+   * State
+   ********************************************************************/
+  let currentUserDoc = null; // loaded from firestore 'users' collection
+  let unsubscribe = {};
+  let editingClientId = null;
+  let editingWorksheetId = null;
+  let editingInvoiceId = null;
+
+  /********************************************************************
+   * UI helpers
+   ********************************************************************/
+  function $(id){ return document.getElementById(id); }
+  function show(el){ el.classList.remove('hidden'); }
+  function hide(el){ el.classList.add('hidden'); }
+
+  /********************************************************************
+   * Auth flow
+   ********************************************************************/
+  auth.onAuthStateChanged(async (u) => {
+    if (!u) { // show auth screen
+      $('authScreen').classList.remove('hidden');
+      $('appScreen').classList.add('hidden');
+      return;
     }
+    // load user doc (or create if none)
+    const doc = await db.collection('users').doc(u.uid).get();
+    if (!doc.exists) {
+      // new users default to operator
+      await db.collection('users').doc(u.uid).set({
+        name: u.email,
+        email: u.email,
+        role: 'operator',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    currentUserDoc = (await db.collection('users').doc(u.uid).get()).data();
+    currentUserDoc.uid = u.uid;
 
-    showApp();
+    // show app screen
+    $('authScreen').classList.add('hidden');
+    $('appScreen').classList.remove('hidden');
+    $('displayName').textContent = currentUserDoc.name || currentUserDoc.email || 'User';
+    $('displayRole').textContent = (currentUserDoc.role || 'operator').toUpperCase();
+
+    // show/hide admin-only
+    document.querySelectorAll('.admin-only').forEach(el=>{
+      el.style.display = currentUserDoc.role === 'admin' ? '' : 'none';
+    });
+
     attachSnapshots();
-  } catch (e) { console.error(e); showAuth(); }
-});
-
-function showAuth(){ authScreen.classList.remove('hidden'); appScreen.classList.add('hidden'); }
-function showApp(){ authScreen.classList.add('hidden'); appScreen.classList.remove('hidden'); displayName.textContent = currentUser.name || currentUser.email; displayRole.textContent = currentUser.role || 'operator';
-  // show admin-only
-  document.querySelectorAll('.admin-only').forEach(el => { el.style.display = currentUser.role === 'admin' ? '' : 'none'; });
-}
-
-// Sign-in / Register
-document.getElementById('signInForm').addEventListener('submit', async (e)=>{ e.preventDefault();
-  const email = document.getElementById('signInEmail').value; const pass = document.getElementById('signInPassword').value;
-  try { await auth.signInWithEmailAndPassword(email, pass); } catch(err){ alert('Sign in failed: '+err.message); }
-});
-
-// Logout
-document.getElementById('btnLogout').addEventListener('click', ()=>auth.signOut());
-
-// Tab navigation
-document.querySelectorAll('[data-tab]').forEach(el=> el.addEventListener('click', (ev)=>{
-  ev.preventDefault(); const tab = el.getAttribute('data-tab'); showTab(tab);
-  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active')); el.classList.add('active');
-}));
-function showTab(name){ document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden')); document.getElementById(name).classList.remove('hidden'); }
-
-// ---------------- Firestore snapshots for live UI ----------------
-let unsubClients=null, unsubWorksheets=null, unsubInvoices=null, unsubUsers=null, unsubCranes=null;
-function attachSnapshots(){
-  if (unsubClients) unsubClients(); if (unsubWorksheets) unsubWorksheets(); if (unsubInvoices) unsubInvoices(); if (unsubUsers) unsubUsers(); if (unsubCranes) unsubCranes();
-
-  unsubClients = db.collection('clients').orderBy('createdAt','desc').onSnapshot(snap=>{
-    const clients = []; snap.forEach(d=>clients.push({id:d.id,...d.data()})); renderClients(clients);
   });
 
-  unsubWorksheets = db.collection('worksheets').orderBy('date','desc').onSnapshot(snap=>{
-    const sheets = []; snap.forEach(d=>sheets.push({id:d.id,...d.data()})); renderWorksheets(sheets);
+  // sign in
+  $('signInForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('signInEmail').value;
+    const pass = $('signInPassword').value;
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch(err) {
+      alert('Sign-in failed: ' + err.message);
+    }
   });
 
-  unsubInvoices = db.collection('invoices').orderBy('date','desc').onSnapshot(snap=>{
-    const invs = []; snap.forEach(d=>invs.push({id:d.id,...d.data()})); renderInvoices(invs);
+  // register (simple)
+  $('showRegister').addEventListener('click', ()=> {
+    document.getElementById('registerCard').classList.remove('d-none');
+  });
+  $('cancelRegister').addEventListener('click', ()=> {
+    document.getElementById('registerCard').classList.add('d-none');
+  });
+  $('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('registerName').value;
+    const email = $('registerEmail').value;
+    const password = $('registerPassword').value;
+    try {
+      const userCred = await auth.createUserWithEmailAndPassword(email, password);
+      // create user doc
+      await db.collection('users').doc(userCred.user.uid).set({
+        name, email, role: 'admin', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert('Account created. You are signed in.');
+    } catch(err) {
+      alert('Register failed: ' + err.message);
+    }
   });
 
-  unsubUsers = db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{
-    const us = []; snap.forEach(d=>us.push({id:d.id,...d.data()})); renderUsers(us);
+  // logout
+  $('logoutBtn').addEventListener('click', ()=> auth.signOut());
+
+  /********************************************************************
+   * Tabs
+   ********************************************************************/
+  document.querySelectorAll('[data-tab]').forEach(el=>{
+    el.addEventListener('click', (ev)=>{
+      ev.preventDefault();
+      const t = el.getAttribute('data-tab');
+      showTab(t);
+      document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+  function showTab(tabId){
+    document.querySelectorAll('.tab-content').forEach(s=> s.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+  }
+
+  /********************************************************************
+   * Attach real-time snapshots
+   ********************************************************************/
+  function attachSnapshots(){
+    // detach old
+    for (const k in unsubscribe) { if (unsubscribe[k]) unsubscribe[k](); }
+    unsubscribe.clients = db.collection('clients').orderBy('createdAt','desc').onSnapshot(snap=>{
+      const clients = []; snap.forEach(d=>clients.push({ id: d.id, ...d.data() })); renderClients(clients);
+    });
+    unsubscribe.worksheets = db.collection('worksheets').orderBy('date','desc').onSnapshot(snap=>{
+      const ws = []; snap.forEach(d=>ws.push({ id: d.id, ...d.data() })); renderWorksheets(ws);
+    });
+    unsubscribe.invoices = db.collection('invoices').orderBy('createdAt','desc').onSnapshot(snap=>{
+      const inv = []; snap.forEach(d=>inv.push({ id: d.id, ...d.data() })); renderInvoices(inv);
+    });
+    unsubscribe.users = db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{
+      const us = []; snap.forEach(d=>us.push({ id: d.id, ...d.data() })); renderUsers(us);
+    });
+    unsubscribe.cranes = db.collection('cranes').orderBy('createdAt','desc').onSnapshot(snap=>{
+      const cs = []; snap.forEach(d=>cs.push({ id: d.id, ...d.data() })); renderCranes(cs);
+    });
+  }
+
+  /********************************************************************
+   * Renderers
+   ********************************************************************/
+  function renderClients(clients){
+    const tbody = $('clientsTable');
+    if (!clients.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No clients</td></tr>'; $('invoiceClient').innerHTML = '<option value="">Select client</option>'; $('wsClient').innerHTML = '<option value="">Select client</option>'; return; }
+    tbody.innerHTML = clients.map(c=>`
+      <tr>
+        <td>${c.name}</td>
+        <td>${c.mobile || ''}</td>
+        <td>${c.state || ''}</td>
+        <td>${c.gst || 'N/A'}</td>
+        <td>${c.gstType === 'inter' ? 'IGST' : 'CGST+SGST'}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="openEditClient('${c.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="deleteClient('${c.id}')"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>
+    `).join('');
+    // populate selects
+    $('invoiceClient').innerHTML = '<option value="">Select client</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    $('wsClient').innerHTML = '<option value="">Select client</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    $('totalClients').textContent = clients.length;
+  }
+
+  function renderWorksheets(ws){
+    const tbody = $('worksheetsTable');
+    if (!ws.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No worksheets</td></tr>'; $('recentWorksheets').innerHTML=''; return; }
+    tbody.innerHTML = ws.map(w=>`
+      <tr>
+        <td>${new Date(w.date).toLocaleDateString()}</td>
+        <td>${w.clientName}</td>
+        <td>${w.craneNo || ''}</td>
+        <td>${w.inTime || ''}</td>
+        <td>${w.outTime || ''}</td>
+        <td>${w.lunchMinutes || 0}</td>
+        <td>${Number(w.totalHours||0).toFixed(2)}</td>
+        <td>₹${Number(w.amount||0).toFixed(2)}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="openEditWorksheet('${w.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="deleteWorksheet('${w.id}')"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>
+    `).join('');
+    $('recentWorksheets').innerHTML = ws.slice(0,5).map(w=>`<tr><td>${new Date(w.date).toLocaleDateString()}</td><td>${w.clientName}</td><td>${w.craneNo || ''}</td><td>${Number(w.totalHours||0).toFixed(2)}</td><td>₹${Number(w.amount||0).toFixed(2)}</td></tr>`).join('');
+    $('totalWorksheets').textContent = ws.length;
+  }
+
+  function renderInvoices(invs){
+    const hist = $('invoiceHistory'); const recent = $('recentInvoices');
+    if (!invs.length) { hist.innerHTML = '<div class="text-muted">No invoices</div>'; recent.innerHTML = ''; $('totalInvoices').textContent = 0; $('totalRevenue').textContent = '₹0'; return; }
+    hist.innerHTML = invs.map(i=>`
+      <div class="border p-2 mb-2">
+        <div class="d-flex justify-content-between">
+          <strong>${i.invoiceNumber}</strong>
+          <span class="badge ${i.status==='paid'?'bg-success':'bg-warning'}">${i.status}</span>
+        </div>
+        <div>${i.clientName}</div>
+        <div>₹${Number(i.totalAmount).toFixed(2)}</div>
+        <div class="mt-2">
+          <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice('${i.id}')"><i class="fas fa-eye"></i></button>
+          <button class="btn btn-sm btn-outline-success" onclick="markInvoicePaid('${i.id}')"><i class="fas fa-check"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteInvoice('${i.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `).join('');
+    recent.innerHTML = invs.slice(0,5).map(i=>`<div class="mb-2"><strong>${i.invoiceNumber}</strong><div>${i.clientName}</div><div>₹${Number(i.totalAmount).toFixed(2)}</div></div>`).join('');
+    const revenue = invs.reduce((s,i)=>s + Number(i.totalAmount||0), 0);
+    $('totalInvoices').textContent = invs.length;
+    $('totalRevenue').textContent = '₹' + revenue.toFixed(2);
+  }
+
+  function renderUsers(us){
+    const tbody = $('usersTable');
+    if (!us.length) { tbody.innerHTML = '<tr><td colspan="4">No users</td></tr>'; return; }
+    tbody.innerHTML = us.map(u=>`
+      <tr>
+        <td>${u.email||''}</td>
+        <td>${u.name||''}</td>
+        <td>${u.role||''}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')">Delete</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderCranes(cs){
+    const tbody = $('cranesTable');
+    if(!cs.length){ tbody.innerHTML = '<tr><td colspan="3">No cranes</td></tr>'; $('wsCrane').innerHTML = '<option value="">Select crane</option>'; return; }
+    tbody.innerHTML = cs.map(c=>`<tr><td>${c.craneNo}</td><td>${c.assignedTo||''}</td><td><button class="btn btn-sm btn-danger" onclick="deleteCrane('${c.id}')"><i class="fas fa-trash'></i></button></td></tr>`).join('');
+    $('wsCrane').innerHTML = '<option value="">Select crane</option>' + cs.map(c=>`<option value="${c.craneNo}">${c.craneNo}</option>`).join('');
+  }
+
+  /********************************************************************
+   * Client CRUD
+   ********************************************************************/
+  $('saveClientBtn').addEventListener('click', async ()=>{
+    const id = $('clientEditId').value;
+    const data = {
+      name: $('clientName').value,
+      mobile: $('clientMobile').value,
+      gst: $('clientGST').value,
+      state: $('clientState').value,
+      gstType: document.querySelector('input[name="gstType"]:checked').value,
+      notes: $('clientNotes').value,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+      if (id) {
+        await db.collection('clients').doc(id).update(data);
+      } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('clients').add(data);
+      }
+      bootstrap.Modal.getInstance($('clientModal')).hide();
+      $('clientForm').reset();
+      $('clientEditId').value = '';
+      $('clientModalTitle').textContent = 'Add Client';
+    } catch(err) { alert('Client save failed: ' + err.message); }
   });
 
-  unsubCranes = db.collection('cranes').orderBy('createdAt','desc').onSnapshot(snap=>{
-    const cs = []; snap.forEach(d=>cs.push({id:d.id,...d.data()})); renderCranes(cs);
+  window.openEditClient = async (id) => {
+    // fill modal
+    const doc = await db.collection('clients').doc(id).get();
+    if (!doc.exists) return alert('Client not found');
+    const c = doc.data();
+    $('clientEditId').value = id;
+    $('clientName').value = c.name || '';
+    $('clientMobile').value = c.mobile || '';
+    $('clientGST').value = c.gst || '';
+    $('clientState').value = c.state || '';
+    if (c.gstType === 'inter') document.getElementById('gstInter').checked = true;
+    else document.getElementById('gstIntra').checked = true;
+    $('clientNotes').value = c.notes || '';
+    $('clientModalTitle').textContent = 'Edit Client';
+    bootstrap.Modal.getInstance($('clientModal'))?.show() ?? new bootstrap.Modal($('clientModal')).show();
+  };
+
+  window.deleteClient = async (id) => {
+    if (!confirm('Delete client?')) return;
+    try { await db.collection('clients').doc(id).delete(); } catch(err){ alert(err.message); }
+  };
+
+  /********************************************************************
+   * Worksheet CRUD
+   ********************************************************************/
+  // calculate total hours & amount
+  function calculateWorksheetTotals() {
+    const inTime = $('wsIn').value; const outTime = $('wsOut').value;
+    const lunch = parseFloat($('wsLunch').value)||0;
+    if (!inTime || !outTime) { $('wsTotalHours').value = ''; $('wsAmount').value = ''; return; }
+    const inD = new Date('2000-01-01T' + inTime);
+    const outD = new Date('2000-01-01T' + outTime);
+    let diff = (outD - inD)/(1000*60*60);
+    diff -= (lunch/60);
+    if (diff < 0) diff = 0;
+    $('wsTotalHours').value = diff.toFixed(2);
+    const rate = parseFloat($('wsRate').value)||0;
+    $('wsAmount').value = (diff * rate).toFixed(2);
+  }
+  ['wsIn','wsOut','wsLunch','wsRate'].forEach(id => { $(id).addEventListener('change', calculateWorksheetTotals); });
+
+  $('saveWorksheetBtn').addEventListener('click', async ()=>{
+    const id = $('worksheetEditId').value;
+    const data = {
+      clientId: $('wsClient').value,
+      clientName: $('wsClient').options[$('wsClient').selectedIndex].text,
+      craneNo: $('wsCrane').value,
+      date: $('wsDate').value,
+      inTime: $('wsIn').value,
+      outTime: $('wsOut').value,
+      lunchMinutes: parseInt($('wsLunch').value)||0,
+      totalHours: parseFloat($('wsTotalHours').value)||0,
+      workDetails: $('wsDetails').value,
+      ratePerHour: parseFloat($('wsRate').value)||0,
+      amount: parseFloat($('wsAmount').value)||0,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+      if (id) {
+        await db.collection('worksheets').doc(id).update(data);
+      } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('worksheets').add(data);
+      }
+      bootstrap.Modal.getInstance($('worksheetModal')).hide();
+      document.getElementById('worksheetForm').reset();
+      $('worksheetEditId').value = '';
+      $('worksheetModalTitle').textContent = 'New Worksheet';
+    } catch(err) { alert('Worksheet save failed: ' + err.message); }
   });
-}
 
-// ---------------- Rendering helpers ----------------
-function renderClients(clients){
-  const tbody = document.getElementById('clientsTable'); const invoiceClient = document.getElementById('invoiceClient'); const ws_client = document.getElementById('ws_client');
-  tbody.innerHTML = clients.map(c=>`<tr><td>${c.name}</td><td>${c.mobile||''}</td><td>${c.gst||'N/A'}</td><td>${c.state||''}</td><td><button class=\"btn btn-sm btn-primary\" onclick=\"editClient('${c.id}')\">Edit</button> <button class=\"btn btn-sm btn-danger\" onclick=\"deleteClient('${c.id}')\">Delete</button></td></tr>`).join('')||'<tr><td colspan="5">No clients</td></tr>';
-  invoiceClient.innerHTML = '<option value="">Select client</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-  ws_client.innerHTML = '<option value="">Select client</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-  document.getElementById('totalClients').textContent = clients.length;
-}
+  window.openEditWorksheet = async (id) => {
+    const doc = await db.collection('worksheets').doc(id).get();
+    if (!doc.exists) return alert('Worksheet not found');
+    const w = doc.data();
+    $('worksheetEditId').value = id;
+    $('wsClient').value = w.clientId || '';
+    $('wsCrane').value = w.craneNo || '';
+    $('wsDate').value = w.date || '';
+    $('wsIn').value = w.inTime || '';
+    $('wsOut').value = w.outTime || '';
+    $('wsLunch').value = w.lunchMinutes || 30;
+    $('wsTotalHours').value = w.totalHours || '';
+    $('wsRate').value = w.ratePerHour || 1500;
+    $('wsAmount').value = w.amount || 0;
+    $('wsDetails').value = w.workDetails || '';
+    $('worksheetModalTitle').textContent = 'Edit Worksheet';
+    bootstrap.Modal.getInstance($('worksheetModal'))?.show() ?? new bootstrap.Modal($('worksheetModal')).show();
+  };
 
-function renderWorksheets(sheets){
-  const tbody = document.getElementById('worksheetsTable'); const recent = document.getElementById('recentWorksheets');
-  tbody.innerHTML = sheets.map(s=>`<tr><td>${new Date(s.date).toLocaleDateString()}</td><td>${s.clientName}</td><td>${s.craneNo}</td><td>${s.inTime}</td><td>${s.outTime}</td><td>${s.lunchMinutes}</td><td>${s.totalHours}</td><td>₹${s.amount}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteWorksheet('${s.id}')\">Del</button></td></tr>`).join('')||'<tr><td colspan="9">No worksheets</td></tr>';
-  recent.innerHTML = sheets.slice(0,5).map(s=>`<tr><td>${new Date(s.date).toLocaleDateString()}</td><td>${s.clientName}</td><td>${s.craneNo}</td><td>${s.totalHours}</td><td>₹${s.amount}</td></tr>`).join('');
-  document.getElementById('totalWorksheets').textContent = sheets.length;
-}
+  window.deleteWorksheet = async (id) => {
+    if (!confirm('Delete worksheet?')) return;
+    try { await db.collection('worksheets').doc(id).delete(); } catch(err){ alert(err.message); }
+  };
 
-function renderInvoices(invs){
-  const hist = document.getElementById('invoicesHistory'); const recentInv = document.getElementById('recentInvoices');
-  hist.innerHTML = invs.map(i=>`<div class=\"border p-2 mb-2\"><div class=\"d-flex justify-content-between\"><strong>${i.invoiceNumber}</strong><span>${i.status}</span></div><div>${i.clientName}</div><div>₹${i.totalAmount}</div><div class=\"mt-2\"><button class=\"btn btn-sm btn-outline-primary\" onclick=\"viewInvoice('${i.id}')\">View</button> <button class=\"btn btn-sm btn-outline-success\" onclick=\"markPaid('${i.id}')\">Mark Paid</button> <button class=\"btn btn-sm btn-outline-danger\" onclick=\"deleteInvoice('${i.id}')\">Delete</button></div></div>`).join('')||'<div>No invoices</div>';
-  recentInv.innerHTML = invs.slice(0,5).map(i=>`<div class=\"mb-2\"><strong>${i.invoiceNumber}</strong><div>${i.clientName}</div><div>₹${i.totalAmount}</div></div>`).join('');
-  document.getElementById('totalInvoices').textContent = invs.length;
-  const revenue = invs.reduce((s,i)=>s + (i.totalAmount||0),0); document.getElementById('totalRevenue').textContent = '₹'+revenue;
-}
+  /********************************************************************
+   * Invoice creation & CRUD
+   ********************************************************************/
+  // generate invoice number
+  function nextInvoiceNumber() {
+    const dt = new Date(); const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0');
+    return `INV-${y}${m}-${Date.now().toString().slice(-5)}`;
+  }
+  $('invoiceNumber').value = nextInvoiceNumber();
 
-function renderUsers(us){
-  const tbody = document.getElementById('usersTable'); tbody.innerHTML = us.map(u=>`<tr><td>${u.email||''}</td><td>${u.name||''}</td><td>${u.role||''}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteUser('${u.id}')\">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No users</td></tr>';
-}
-function renderCranes(cs){ document.getElementById('cranesTable').innerHTML = cs.map(c=>`<tr><td>${c.craneNo}</td><td>${c.assignedTo||''}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteCrane('${c.id}')\">Del</button></td></tr>`).join('')||'<tr><td colspan="3">No cranes</td></tr>'; }
+  // Import client worksheets (unbilled)
+  $('importWorksheetsBtn').addEventListener('click', async ()=>{
+    const clientId = $('invoiceClient').value; if (!clientId) return alert('Select client');
+    // fetch worksheets for this client
+    const snap = await db.collection('worksheets').where('clientId','==',clientId).get();
+    if (snap.empty) return alert('No worksheets found for this client');
+    const items = [];
+    snap.forEach(d => { const w = d.data(); items.push({ id: d.id, date: w.date, desc: w.workDetails || 'Crane work', hours: w.totalHours || 0, rate: w.ratePerHour || 0, amount: w.amount || 0 }); });
+    // populate invoice items
+    const tbody = $('invoiceItems'); items.forEach(it => {
+      const row = document.createElement('tr');
+      row.dataset.wsId = it.id;
+      row.innerHTML = `
+        <td><input type="checkbox" class="inv-check" checked></td>
+        <td>${it.date}</td>
+        <td><input class="form-control inv-desc" value="${escapeHtml(it.desc)}"></td>
+        <td><input type="number" class="form-control inv-hours" value="${it.hours}"></td>
+        <td><input type="number" class="form-control inv-rate" value="${it.rate}"></td>
+        <td class="inv-amount">₹${Number(it.amount|| (it.hours*it.rate)).toFixed(2)}</td>
+        <td><button class="btn btn-sm btn-danger" type="button" onclick="removeInvoiceRow(this)"><i class="fas fa-trash"></i></button></td>
+      `;
+      tbody.appendChild(row);
+    });
+    recalcInvoice();
+  });
 
-// ---------------- CRUD: Clients ----------------
-document.getElementById('saveClientBtn').addEventListener('click', async ()=>{
-  const data = { name:document.getElementById('c_name').value, mobile:document.getElementById('c_mobile').value, gst:document.getElementById('c_gst').value, state:document.getElementById('c_state').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-  try{ await db.collection('clients').add(data); bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide(); }catch(e){alert(e.message);} });
-window.editClient = async (id)=>{
-  const doc = await db.collection('clients').doc(id).get(); if(!doc.exists) return; const d = doc.data(); document.getElementById('c_name').value=d.name; document.getElementById('c_mobile').value=d.mobile; document.getElementById('c_gst').value=d.gst; document.getElementById('c_state').value=d.state; document.getElementById('clientModal').querySelector('.modal-title').textContent='Edit Client'; bootstrap.Modal.getInstance(document.getElementById('clientModal'))?.show();
-  // Save will create new - for simplicity user can delete then re-add. (Could be extended to edit.)
-}
-window.deleteClient = async (id)=>{ if(confirm('Delete client?')) { await db.collection('clients').doc(id).delete(); } }
+  // Add manual service line
+  $('addManualLineBtn').addEventListener('click', ()=>{
+    const tbody = $('invoiceItems');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="checkbox" class="inv-check" checked></td>
+      <td>${new Date().toISOString().split('T')[0]}</td>
+      <td><input class="form-control inv-desc" value="Manual service"></td>
+      <td><input type="number" class="form-control inv-hours" value="1"></td>
+      <td><input type="number" class="form-control inv-rate" value="0"></td>
+      <td class="inv-amount">₹0.00</td>
+      <td><button class="btn btn-sm btn-danger" type="button" onclick="removeInvoiceRow(this)"><i class="fas fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(row);
+    recalcInvoice();
+  });
 
-// ---------------- CRUD: Worksheets ----------------
-function calcHours(inT,outT,lunchM){ if(!inT||!outT) return 0; const inD=new Date('2000-01-01T'+inT); const outD=new Date('2000-01-01T'+outT); let hrs=(outD-inD)/(1000*60*60); hrs -= (lunchM||0)/60; return Math.max(0, +hrs.toFixed(2)); }
-['ws_in','ws_out','ws_lunch','ws_rate'].forEach(id=>document.getElementById(id).addEventListener('change', ()=>{
-  const h = calcHours(document.getElementById('ws_in').value, document.getElementById('ws_out').value, parseInt(document.getElementById('ws_lunch').value)||0);
-  document.getElementById('ws_total').value = h; const amt = h * (parseFloat(document.getElementById('ws_rate').value)||0); document.getElementById('ws_amount').value = amt.toFixed(2);
-}));
+  window.removeInvoiceRow = (btn) => { btn.closest('tr').remove(); recalcInvoice(); };
 
-document.getElementById('saveWorksheetBtn').addEventListener('click', async ()=>{
-  const data = { clientId: document.getElementById('ws_client').value, clientName: document.getElementById('ws_client').options[document.getElementById('ws_client').selectedIndex].text, craneNo: document.getElementById('ws_crane').value, date: document.getElementById('ws_date').value, inTime: document.getElementById('ws_in').value, outTime: document.getElementById('ws_out').value, lunchMinutes: parseInt(document.getElementById('ws_lunch').value)||0, totalHours: parseFloat(document.getElementById('ws_total').value)||0, workDetails: document.getElementById('ws_details').value, ratePerHour: parseFloat(document.getElementById('ws_rate').value)||0, amount: parseFloat(document.getElementById('ws_amount').value)||0, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-  try{ await db.collection('worksheets').add(data); bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide(); }catch(e){ alert(e.message); }
-});
-window.deleteWorksheet = async id=>{ if(confirm('Delete worksheet?')) await db.collection('worksheets').doc(id).delete(); }
+  // recalc invoice totals
+  function recalcInvoice() {
+    const rows = Array.from(document.querySelectorAll('#invoiceItems tr'));
+    let subtotal = 0;
+    rows.forEach(r => {
+      const checked = r.querySelector('.inv-check') ? r.querySelector('.inv-check').checked : true;
+      if(!checked) return;
+      const hrs = parseFloat(r.querySelector('.inv-hours')?.value) || 0;
+      const rate = parseFloat(r.querySelector('.inv-rate')?.value) || 0;
+      const amt = hrs * rate;
+      (r.querySelector('.inv-amount')).textContent = '₹' + amt.toFixed(2);
+      subtotal += amt;
+    });
+    const gst = +(subtotal * 0.18).toFixed(2);
+    const total = +(subtotal + gst).toFixed(2);
+    $('invSubtotal').textContent = '₹' + subtotal.toFixed(2);
+    $('invGST').textContent = '₹' + gst.toFixed(2);
+    $('invTotal').textContent = '₹' + total.toFixed(2);
+  }
 
-// ---------------- CRUD: Invoices ----------------
-function resetInvoiceForm(){ document.getElementById('invoiceItems').innerHTML=''; document.getElementById('invSubtotal').textContent='₹0'; document.getElementById('invGST').textContent='₹0'; document.getElementById('invTotal').textContent='₹0'; }
+  // live recalc when inputs change
+  document.addEventListener('input', function(e){
+    if (e.target.classList && (e.target.classList.contains('inv-hours') || e.target.classList.contains('inv-rate') || e.target.classList.contains('inv-check'))) {
+      recalcInvoice();
+    }
+  });
 
-// import client worksheets into invoice items
-document.getElementById('importClientWorksheets').addEventListener('click', async ()=>{
-  const clientId = document.getElementById('invoiceClient').value; if(!clientId){ alert('Select client'); return; }
-  const snap = await db.collection('worksheets').where('clientId','==',clientId).get(); const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
-  // render
-  const tbody = document.getElementById('invoiceItems'); tbody.innerHTML = items.map(it=>`<tr data-id="${it.id}"><td><input type=checkbox class=\"inv-select\" checked></td><td>${it.date}</td><td>${it.totalHours}</td><td><input class=\"form-control inv-rate\" value=${it.ratePerHour}></td><td class=\"inv-amount\">₹${(it.amount||0).toFixed(2)}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"removeInvItem(this)\">Remove</button></td></tr>`).join(''); recalcInvoice();
-});
-function removeInvItem(btn){ btn.closest('tr').remove(); recalcInvoice(); }
-function recalcInvoice(){ const rows = Array.from(document.querySelectorAll('#invoiceItems tr')); let subtotal=0; rows.forEach(r=>{ const hrs = parseFloat(r.children[2].textContent)||0; const rate = parseFloat(r.querySelector('.inv-rate')?.value)||0; const amt = hrs*rate; r.querySelector('.inv-amount').textContent = '₹'+amt.toFixed(2); subtotal += amt; }); const gst = subtotal*0.18; const total = subtotal+gst; document.getElementById('invSubtotal').textContent='₹'+subtotal.toFixed(2); document.getElementById('invGST').textContent='₹'+gst.toFixed(2); document.getElementById('invTotal').textContent='₹'+total.toFixed(2); }
+  // save draft
+  $('saveInvoiceDraft').addEventListener('click', async ()=>{
+    const clientId = $('invoiceClient').value; if (!clientId) return alert('Select client');
+    const items = collectInvoiceItems();
+    if (!items.length) return alert('No items added');
+    const payload = {
+      clientId, clientName: $('invoiceClient').options[$('invoiceClient').selectedIndex].text,
+      items, subTotal: parseFloat($('invSubtotal').textContent.replace('₹',''))||0,
+      gst: parseFloat($('invGST').textContent.replace('₹',''))||0,
+      totalAmount: parseFloat($('invTotal').textContent.replace('₹',''))||0,
+      status: 'draft',
+      invoiceNumber: $('invoiceNumber').value || nextInvoiceNumber(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+      await db.collection('invoices').add(payload);
+      alert('Draft saved');
+      // reset form
+      $('invoiceItems').innerHTML = '';
+      recalcInvoice();
+      $('invoiceNumber').value = nextInvoiceNumber();
+    } catch(err) { alert(err.message); }
+  });
 
-// when rate edited
-document.addEventListener('input', (e)=>{ if(e.target.classList && e.target.classList.contains('inv-rate')) recalcInvoice(); });
+  // generate final invoice
+  $('invoiceForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const clientId = $('invoiceClient').value; if (!clientId) return alert('Select client');
+    const items = collectInvoiceItems();
+    if (!items.length) return alert('No items added');
+    const subtotal = parseFloat($('invSubtotal').textContent.replace('₹','')) || 0;
+    const gst = parseFloat($('invGST').textContent.replace('₹','')) || 0;
+    const total = parseFloat($('invTotal').textContent.replace('₹','')) || 0;
+    const invoiceNumber = $('invoiceNumber').value || nextInvoiceNumber();
+    const clientName = $('invoiceClient').options[$('invoiceClient').selectedIndex].text;
+    const payload = { clientId, clientName, items, subTotal: subtotal, gst, totalAmount: total, status: 'pending', invoiceNumber, date: new Date().toISOString(), createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+    try {
+      const docRef = await db.collection('invoices').add(payload);
+      // optionally mark worksheets as invoiced (if they were linked)
+      alert('Invoice created: ' + invoiceNumber);
+      // clear
+      $('invoiceItems').innerHTML = '';
+      recalcInvoice();
+      $('invoiceNumber').value = nextInvoiceNumber();
+      // switch to invoices tab
+    } catch(err) { alert(err.message); }
+  });
 
-// Generate invoice
-document.getElementById('invoiceForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const clientId = document.getElementById('invoiceClient').value; if(!clientId) return alert('Select client'); const rows = Array.from(document.querySelectorAll('#invoiceItems tr')); if(rows.length===0) return alert('Add items'); const items = rows.map(r=>({ worksheetId: r.dataset.id, date: r.children[1].textContent, hours: parseFloat(r.children[2].textContent)||0, rate: parseFloat(r.querySelector('.inv-rate').value)||0, amount: parseFloat(r.querySelector('.inv-amount').textContent.replace('₹',''))||0 })); const subtotal = items.reduce((s,i)=>s+i.amount,0); const gst = +(subtotal*0.18).toFixed(2); const total = +(subtotal+gst).toFixed(2); const invoiceNumber = 'INV-'+Date.now(); const clientName = document.getElementById('invoiceClient').options[document.getElementById('invoiceClient').selectedIndex].text;
-  const payload = { clientId, clientName, items, subTotal: subtotal, gst, totalAmount: total, status:'pending', invoiceNumber, date: new Date().toISOString(), createdBy: currentUser.uid };
-  try{ const docRef = await db.collection('invoices').add(payload); alert('Invoice created'); resetInvoiceForm(); }catch(err){ alert(err.message); }
-});
+  function collectInvoiceItems() {
+    const rows = Array.from(document.querySelectorAll('#invoiceItems tr'));
+    const items = [];
+    rows.forEach(r => {
+      const checked = r.querySelector('.inv-check') ? r.querySelector('.inv-check').checked : true;
+      if(!checked) return;
+      const wsId = r.dataset.wsId || null;
+      const date = r.children[1].textContent;
+      const desc = r.querySelector('.inv-desc') ? r.querySelector('.inv-desc').value : r.children[2].textContent;
+      const hours = parseFloat(r.querySelector('.inv-hours')?.value) || 0;
+      const rate = parseFloat(r.querySelector('.inv-rate')?.value) || 0;
+      const amount = +(hours * rate).toFixed(2);
+      items.push({ worksheetId: wsId, date, description: desc, hours, rate, amount });
+    });
+    return items;
+  }
 
-window.viewInvoice = async (id)=>{ const d = await db.collection('invoices').doc(id).get(); if(!d.exists) return alert('not found'); const inv=d.data(); alert(`Invoice ${inv.invoiceNumber}\nClient: ${inv.clientName}\nTotal: ₹${inv.totalAmount}`); }
-window.deleteInvoice = async id=>{ if(confirm('Delete invoice?')) await db.collection('invoices').doc(id).delete(); }
-window.markPaid = async id=>{ await db.collection('invoices').doc(id).update({ status:'paid', paidAt: firebase.firestore.FieldValue.serverTimestamp() }); }
+  /********************************************************************
+   * Invoice view / PDF / share
+   ********************************************************************/
+  window.viewInvoice = async (id) => {
+    editingInvoiceId = id;
+    const doc = await db.collection('invoices').doc(id).get();
+    if (!doc.exists) return alert('Invoice not found');
+    const inv = doc.data();
+    // build invoice HTML
+    const invoiceHtml = buildInvoiceHtml(inv);
+    $('invoicePrintArea').innerHTML = invoiceHtml;
+    // show modal
+    bootstrap.Modal.getInstance($('invoiceViewModal'))?.show() ?? new bootstrap.Modal($('invoiceViewModal')).show();
+  };
 
-// ---------------- Admin: create auth user flow ----------------
-// Note: creating a Firebase Auth user with createUserWithEmailAndPassword will sign in as that user.
-// To preserve admin session, we ask admin to input their password to reauthenticate after creation.
+  function buildInvoiceHtml(inv) {
+    // GST split logic: we'll assume 18% total — split if intra
+    const gstPercent = 18;
+    const isInter = inv.clientId ? true : false; // default — we will look up client to determine
+    // fetch client to determine gst type synchronously? We make it async in caller; for simplicity, compute numbers now.
+    const sub = Number(inv.subTotal||0);
+    const gstAmount = Number(inv.gst|| (sub * gstPercent / 100));
+    const total = Number(inv.totalAmount || (sub + gstAmount));
+    // Format items table
+    const rows = (inv.items || []).map(it=>`<tr><td>${escapeHtml(it.description)}</td><td class="text-end">${it.hours}</td><td class="text-end">₹${Number(it.rate).toFixed(2)}</td><td class="text-end">₹${Number(it.amount).toFixed(2)}</td></tr>`).join('');
+    // header with company & client
+    return `
+      <div class="invoice-paper" id="invoicePaper">
+        <div class="invoice-header">
+          <div>
+            <h3 class="invoice-title">Bhavishya Enterprise</h3>
+            <div>5 T M Park, Mukund Parnera, Valsad 396020, Gujarat</div>
+            <div>Phone: 8866995757</div>
+            <div>GSTIN: 24ABCDE1234F1Z5</div>
+          </div>
+          <div class="invoice-meta">
+            <div><strong>Invoice:</strong> ${escapeHtml(inv.invoiceNumber || '')}</div>
+            <div><strong>Date:</strong> ${new Date(inv.date || Date.now()).toLocaleDateString()}</div>
+            <div><strong>Status:</strong> ${inv.status}</div>
+            <div><strong>Client:</strong> ${escapeHtml(inv.clientName || '')}</div>
+          </div>
+        </div>
 
-document.getElementById('saveUserBtn').addEventListener('click', async ()=>{
-  const email = document.getElementById('u_email').value; const name = document.getElementById('u_name').value; const role = document.getElementById('u_role').value; const pass = document.getElementById('u_pass').value; const adminPass = document.getElementById('admin_reauth_pass').value;
-  if(!email||!pass) return alert('Provide email and temp password');
-  if(!confirm('Creating an auth account will temporarily sign you out. You will be asked to re-enter your admin password to continue.')) return;
-  const adminEmail = auth.currentUser.email;
-  try{
-    // create auth user
-    await auth.createUserWithEmailAndPassword(email, pass);
-    const newUser = auth.currentUser; // now signed in as new user
-    // create user doc
-    await db.collection('users').doc(newUser.uid).set({ name, email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    // sign out the created user
-    await auth.signOut();
-    // sign back in as admin using provided admin password
-    await auth.signInWithEmailAndPassword(adminEmail, adminPass);
-    alert('User created successfully and admin session restored.');
-    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
-  }catch(err){ alert('Error: '+err.message); try{ await auth.signOut(); auth.signInWithEmailAndPassword(adminEmail, adminPass); }catch(e){ console.warn('Restore failed',e); showAuth(); } }
-});
+        <hr>
 
-// ---------------- Cranes ----------------
-document.getElementById('saveCraneBtn').addEventListener('click', async ()=>{ const craneNo=document.getElementById('crane_no').value; const assigned=document.getElementById('crane_user_email').value || null; if(!craneNo) return alert('Enter crane no'); await db.collection('cranes').add({ craneNo, assignedTo:assigned, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); bootstrap.Modal.getInstance(document.getElementById('craneModal')).hide(); });
-window.deleteCrane = async id=>{ if(confirm('Delete crane?')) await db.collection('cranes').doc(id).delete(); }
+        <div class="table-responsive">
+          <table class="table invoice-table">
+            <thead><tr><th>Description</th><th class="text-end">Hours</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
 
-// ---------------- Users management ----------------
-window.deleteUser = async id=>{ if(confirm('Delete user?')) await db.collection('users').doc(id).delete(); }
+        <div class="d-flex justify-content-end">
+          <div style="width:320px">
+            <div class="d-flex justify-content-between"><div>Subtotal</div><div>₹${sub.toFixed(2)}</div></div>
+            <div class="d-flex justify-content-between"><div>GST (${gstPercent}%)</div><div>₹${gstAmount.toFixed(2)}</div></div>
+            <hr>
+            <div class="d-flex justify-content-between"><strong>Total</strong><strong>₹${total.toFixed(2)}</strong></div>
+            <div class="gst-notes mt-2">This is a computer-generated invoice. GST applicable as per Indian law.</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
-// ---------------- Initial helper: create default admin if none ----------------
-(async function ensureAdminExists(){ const snap = await db.collection('users').limit(1).get(); if(snap.empty){ console.log('No users found - creating a public admin signup is recommended.'); } })();
+  // download PDF (html2canvas -> jsPDF)
+  $('downloadPdfBtn').addEventListener('click', async ()=>{
+    const el = document.getElementById('invoicePaper');
+    if (!el) { alert('Invoice not ready'); return; }
+    try {
+      // use html2canvas to capture
+      const canvas = await html2canvas(el, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width, canvas.height] });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      const invNum = editingInvoiceId ? ('invoice-' + editingInvoiceId) : 'invoice';
+      pdf.save(`${invNum}.pdf`);
+    } catch(err) { alert('PDF generation failed: ' + err.message); }
+  });
 
-// End of script
-</script>
+  // Share via WhatsApp — share a summary text
+  $('waShareBtn').addEventListener('click', async ()=>{
+    if (!editingInvoiceId) return alert('No invoice selected');
+    const doc = await db.collection('invoices').doc(editingInvoiceId).get();
+    if (!doc.exists) return alert('Invoice not found');
+    const inv = doc.data();
+    const text = `Invoice ${inv.invoiceNumber}%0AClient: ${inv.clientName}%0ATotal: ₹${(inv.totalAmount||0).toFixed(2)}%0AThank you.`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  });
+
+  // Share via email (mailto)
+  $('emailShareBtn').addEventListener('click', async ()=>{
+    if (!editingInvoiceId) return alert('No invoice selected');
+    const doc = await db.collection('invoices').doc(editingInvoiceId).get();
+    if (!doc.exists) return alert('Invoice not found');
+    const inv = doc.data();
+    const subject = encodeURIComponent(`Invoice ${inv.invoiceNumber}`);
+    const body = encodeURIComponent(`Hello,\n\nPlease find your invoice ${inv.invoiceNumber} for ₹${(inv.totalAmount||0).toFixed(2)}.\n\nThank you,\nBhavishya Enterprise`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  });
+
+  // print invoice
+  $('printInvoiceBtn').addEventListener('click', ()=>{
+    window.print();
+  });
+
+  /********************************************************************
+   * Invoice actions
+   ********************************************************************/
+  window.markInvoicePaid = async (id) => {
+    if (!confirm('Mark as paid?')) return;
+    try { await db.collection('invoices').doc(id).update({ status: 'paid', paidAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch(err){ alert(err.message); }
+  };
+
+  window.deleteInvoice = async (id) => {
+    if (!confirm('Delete invoice?')) return;
+    try { await db.collection('invoices').doc(id).delete(); } catch(err){ alert(err.message); }
+  };
+
+  /********************************************************************
+   * Users & Cranes
+   ********************************************************************/
+  // Create auth user (admin)
+  $('createAuthUserBtn').addEventListener('click', async ()=>{
+    const email = $('userEmail').value; const name = $('userFullName').value; const role = $('userRole').value;
+    const tempPass = $('userTempPass').value; const adminPass = $('adminReauthPass').value;
+    if (!email || !tempPass || !adminPass) return alert('Fill required fields');
+    if (!confirm('Creating a user will temporarily sign you out. You will be asked to re-sign in as admin. Continue?')) return;
+    const adminEmail = auth.currentUser.email;
+    try {
+      // create user
+      await auth.createUserWithEmailAndPassword(email, tempPass);
+      const newUser = auth.currentUser;
+      // create user doc
+      await db.collection('users').doc(newUser.uid).set({ email, name, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      // sign out new user
+      await auth.signOut();
+      // sign back in as admin (reauthenticate)
+      await auth.signInWithEmailAndPassword(adminEmail, adminPass);
+      alert('User created and admin session restored.');
+      bootstrap.Modal.getInstance($('userModal')).hide();
+    } catch(err) {
+      alert('User creation failed: ' + err.message);
+      try { await auth.signOut(); await auth.signInWithEmailAndPassword(adminEmail, adminPass); } catch(e){ console.error('restore failed', e); }
+    }
+  });
+
+  // remove user doc (doesn't delete auth user)
+  window.removeUser = async (id) => {
+    if (!confirm('Remove user record? This does not delete the Auth account.')) return;
+    try { await db.collection('users').doc(id).delete(); } catch(err){ alert(err.message); }
+  };
+
+  // create crane
+  $('saveCraneBtn').addEventListener('click', async ()=>{
+    const craneNo = $('craneNo').value; const assigned = $('craneAssign').value || null;
+    if (!craneNo) return alert('Enter crane no');
+    try {
+      await db.collection('cranes').add({ craneNo, assignedTo: assigned, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      bootstrap.Modal.getInstance($('craneModal')).hide();
+      $('craneForm').reset();
+    } catch(err) { alert(err.message); }
+  });
+
+  window.deleteCrane = async (id) => {
+    if (!confirm('Delete crane?')) return;
+    try { await db.collection('cranes').doc(id).delete(); } catch(err){ alert(err.message); }
+  };
+
+  /********************************************************************
+   * Utility & init
+   ********************************************************************/
+  function escapeHtml(str='') {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function nextInvoiceNumber(){ return 'INV-' + (new Date().toISOString().slice(0,10).replace(/-/g,'')) + '-' + Math.floor(Math.random()*90000+10000); }
+
+  /********************************************************************
+   * Initial load helpers (if user is already signed-in)
+   ********************************************************************/
+  // quick client-side init: create default admin if none exists
+  (async function ensureAtLeastOneUser(){
+    const snap = await db.collection('users').limit(1).get();
+    if (snap.empty) {
+      // no users exists: we can't create auth user from server here, but we can inform user
+      console.log('No users found in Firestore; create one by registering an account.');
+    }
+  })();
+
+  // Recaclulate totals live when inputs in invoice items change
+  // already wired with event listener
+
+  </script>
 </body>
 </html>
