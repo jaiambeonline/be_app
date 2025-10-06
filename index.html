@@ -319,6 +319,12 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .worksheet-actions, .invoice-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -601,7 +607,7 @@
                                                 <th>Out Time</th>
                                                 <th>Total Hours</th>
                                                 <th>Work Details</th>
-                                                <th class="admin-only">Actions</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="worksheetTable">
@@ -1136,6 +1142,28 @@
         </div>
     </div>
 
+    <!-- Worksheet Preview Modal -->
+    <div class="modal fade" id="worksheetPreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Worksheet Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="worksheetPreview" class="p-4" style="background: white;">
+                        <!-- Worksheet preview will be generated here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="printWorksheet">Print Worksheet</button>
+                    <button type="button" class="btn btn-success" id="downloadWorksheet">Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Chart.js -->
@@ -1145,12 +1173,12 @@
         // Firebase configuration
         const firebaseConfig = {
             // Replace with your Firebase config
-            apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
-            authDomain: "bhavishya-enterprise.firebaseapp.com",
-            projectId: "bhavishya-enterprise",
-            storageBucket: "bhavishya-enterprise.firebasestorage.app",
-            messagingSenderId: "68829794521",
-            appId: "1:68829794521:web:2933f17847e5d043666ec8"
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
         };
 
         // Initialize Firebase
@@ -1452,6 +1480,7 @@
             const worksheetModal = new bootstrap.Modal(document.getElementById('worksheetModal'));
             const userModal = new bootstrap.Modal(document.getElementById('userModal'));
             const invoicePreviewModal = new bootstrap.Modal(document.getElementById('invoicePreviewModal'));
+            const worksheetPreviewModal = new bootstrap.Modal(document.getElementById('worksheetPreviewModal'));
             
             // Set default date for worksheet
             document.getElementById('workDate').valueAsDate = new Date();
@@ -1748,10 +1777,23 @@
                         <td>${ws.outTime}</td>
                         <td>${ws.totalHours}</td>
                         <td>${ws.workDetails}</td>
-                        <td class="admin-only">
-                            <button class="btn btn-sm btn-danger" onclick="deleteWorksheet('${ws.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <td>
+                            <div class="worksheet-actions">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewWorksheet('${ws.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" onclick="shareWorksheetAsPDF('${ws.id}')">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                                ${currentUser.role === 'admin' ? `
+                                <button class="btn btn-sm btn-outline-warning" onclick="editWorksheet('${ws.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteWorksheet('${ws.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                ` : ''}
+                            </div>
                         </td>
                     </tr>
                 `).join('');
@@ -1777,16 +1819,21 @@
                         <div class="small">${inv.clientName}</div>
                         <div class="small">₹${inv.totalAmount.toFixed(2)}</div>
                         <div class="small text-muted">${new Date(inv.date).toLocaleDateString('en-IN')}</div>
-                        <div class="mt-2">
+                        <div class="mt-2 invoice-actions">
                             <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice('${inv.id}')">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="shareInvoiceAsPDF('${inv.id}')">
+                                <i class="fas fa-share"></i>
+                            </button>
+                            ${currentUser.role === 'admin' ? `
                             <button class="btn btn-sm btn-outline-success" onclick="markAsPaid('${inv.id}')">
                                 <i class="fas fa-check"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteInvoice('${inv.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            ` : ''}
                         </div>
                     </div>
                 `).join('');
@@ -1918,6 +1965,16 @@
             }
         }
         
+        // View worksheet
+        function viewWorksheet(id) {
+            const worksheet = worksheets.find(ws => ws.id === id);
+            if (worksheet) {
+                generateWorksheetPreview(worksheet);
+                const worksheetPreviewModal = new bootstrap.Modal(document.getElementById('worksheetPreviewModal'));
+                worksheetPreviewModal.show();
+            }
+        }
+        
         // Mark invoice as paid in Firebase
         function markAsPaid(id) {
             db.collection('invoices').doc(id).update({
@@ -2043,98 +2100,277 @@
             };
             
             document.getElementById('downloadInvoice').onclick = function() {
-                generatePDF(invoice);
+                generatePDF(invoice, 'invoice');
             };
         }
         
-        // Generate PDF invoice
-        function generatePDF(invoice) {
+        // Generate worksheet preview
+        function generateWorksheetPreview(worksheet) {
+            const worksheetPreview = document.getElementById('worksheetPreview');
+            
+            worksheetPreview.innerHTML = `
+                <div class="invoice-header">
+                    <div class="row">
+                        <div class="col-6">
+                            <h3>Bhavishya Enterprise</h3>
+                            <p>5 T M Park, Mukund Parnera<br>
+                            Valsad 396020, Gujarat<br>
+                            Mobile: 8866995757<br>
+                            Email: bhavishyaenterprisevalsad@gmail.com</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <h2>WORK SHEET</h2>
+                            <p><strong>Date:</strong> ${new Date(worksheet.date).toLocaleDateString('en-IN')}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5>Client Details:</h5>
+                        <p><strong>Name:</strong> ${worksheet.clientName}<br>
+                        <strong>Crane No:</strong> ${worksheet.craneNumber}</p>
+                    </div>
+                </div>
+                
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Work Details</th>
+                            <th>In Time</th>
+                            <th>Out Time</th>
+                            <th>Lunch Break</th>
+                            <th>Total Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${worksheet.workDetails}</td>
+                            <td>${worksheet.inTime}</td>
+                            <td>${worksheet.outTime}</td>
+                            <td>${worksheet.lunchTime} minutes</td>
+                            <td>${worksheet.totalHours} hours</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="row mt-4">
+                    <div class="col-6">
+                        <p><strong>Rate Type:</strong> ${worksheet.rateType}</p>
+                        <p><strong>Rate Amount:</strong> ₹${worksheet.rateAmount}</p>
+                        <p><strong>Total Amount:</strong> ₹${(parseFloat(worksheet.totalHours) * parseFloat(worksheet.rateAmount)).toFixed(2)}</p>
+                    </div>
+                </div>
+                
+                <div class="row mt-5">
+                    <div class="col-6">
+                        <p>Customer Signature</p>
+                    </div>
+                    <div class="col-6 text-end">
+                        <p>Operator Signature</p>
+                    </div>
+                </div>
+            `;
+            
+            // Set up print and download buttons
+            document.getElementById('printWorksheet').onclick = function() {
+                window.print();
+            };
+            
+            document.getElementById('downloadWorksheet').onclick = function() {
+                generatePDF(worksheet, 'worksheet');
+            };
+        }
+        
+        // Generate PDF
+        function generatePDF(data, type) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // Add content to PDF
-            doc.setFontSize(16);
-            doc.text('BHAVISHYA ENTERPRISE', 105, 15, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text('5 T M Park, Mukund Parnera, Valsad 396020, Gujarat', 105, 22, { align: 'center' });
-            doc.text('Mobile: 8866995757 | Email: bhavishyaenterprisevalsad@gmail.com', 105, 27, { align: 'center' });
-            doc.text('GSTIN: 24ABCDE1234F1Z5', 105, 32, { align: 'center' });
-            
-            doc.setFontSize(14);
-            doc.text('TAX INVOICE', 105, 42, { align: 'center' });
-            
-            // Invoice details
-            doc.setFontSize(10);
-            doc.text(`Invoice No: ${invoice.invoiceNumber}`, 15, 50);
-            doc.text(`Date: ${new Date(invoice.date).toLocaleDateString('en-IN')}`, 15, 55);
-            
-            // Bill to
-            doc.text('Bill To:', 15, 65);
-            doc.text(invoice.clientName, 15, 70);
-            doc.text(invoice.clientAddress, 15, 75);
-            doc.text(invoice.clientState, 15, 80);
-            doc.text(`GSTIN: ${invoice.clientGST || 'N/A'}`, 15, 85);
-            
-            // Invoice table
-            let yPosition = 100;
-            doc.text('Date', 15, yPosition);
-            doc.text('Description', 40, yPosition);
-            doc.text('Hours', 120, yPosition);
-            doc.text('Rate', 140, yPosition);
-            doc.text('Amount', 160, yPosition);
-            
-            yPosition += 5;
-            doc.line(15, yPosition, 195, yPosition);
-            
-            yPosition += 10;
-            invoice.items.forEach(item => {
-                doc.text(new Date(item.date).toLocaleDateString('en-IN'), 15, yPosition);
-                doc.text(item.workDetails.substring(0, 30), 40, yPosition);
-                doc.text(item.totalHours.toString(), 120, yPosition);
-                doc.text(item.rateAmount.toString(), 140, yPosition);
-                doc.text((item.totalHours * item.rateAmount).toFixed(2), 160, yPosition);
+            if (type === 'invoice') {
+                // Add content to PDF for invoice
+                doc.setFontSize(16);
+                doc.text('BHAVISHYA ENTERPRISE', 105, 15, { align: 'center' });
+                doc.setFontSize(10);
+                doc.text('5 T M Park, Mukund Parnera, Valsad 396020, Gujarat', 105, 22, { align: 'center' });
+                doc.text('Mobile: 8866995757 | Email: bhavishyaenterprisevalsad@gmail.com', 105, 27, { align: 'center' });
+                doc.text('GSTIN: 24ABCDE1234F1Z5', 105, 32, { align: 'center' });
+                
+                doc.setFontSize(14);
+                doc.text('TAX INVOICE', 105, 42, { align: 'center' });
+                
+                // Invoice details
+                doc.setFontSize(10);
+                doc.text(`Invoice No: ${data.invoiceNumber}`, 15, 50);
+                doc.text(`Date: ${new Date(data.date).toLocaleDateString('en-IN')}`, 15, 55);
+                
+                // Bill to
+                doc.text('Bill To:', 15, 65);
+                doc.text(data.clientName, 15, 70);
+                doc.text(data.clientAddress, 15, 75);
+                doc.text(data.clientState, 15, 80);
+                doc.text(`GSTIN: ${data.clientGST || 'N/A'}`, 15, 85);
+                
+                // Invoice table
+                let yPosition = 100;
+                doc.text('Date', 15, yPosition);
+                doc.text('Description', 40, yPosition);
+                doc.text('Hours', 120, yPosition);
+                doc.text('Rate', 140, yPosition);
+                doc.text('Amount', 160, yPosition);
+                
+                yPosition += 5;
+                doc.line(15, yPosition, 195, yPosition);
+                
                 yPosition += 10;
-            });
-            
-            // Total
-            yPosition += 10;
-            doc.line(15, yPosition, 195, yPosition);
-            yPosition += 10;
-            
-            const gstRate = 0.18;
-            const taxableAmount = invoice.totalAmount / (1 + gstRate);
-            const gstAmount = invoice.totalAmount - taxableAmount;
-            const cgst = gstAmount / 2;
-            const sgst = gstAmount / 2;
-            
-            doc.text('Subtotal:', 140, yPosition);
-            doc.text(`₹${taxableAmount.toFixed(2)}`, 160, yPosition);
-            yPosition += 10;
-            
-            doc.text('CGST (9%):', 140, yPosition);
-            doc.text(`₹${cgst.toFixed(2)}`, 160, yPosition);
-            yPosition += 10;
-            
-            doc.text('SGST (9%):', 140, yPosition);
-            doc.text(`₹${sgst.toFixed(2)}`, 160, yPosition);
-            yPosition += 10;
-            
-            doc.text('Total:', 140, yPosition);
-            doc.text(`₹${invoice.totalAmount.toFixed(2)}`, 160, yPosition);
-            
-            // Amount in words
-            yPosition += 15;
-            doc.text(`Amount in Words: ${numberToWords(invoice.totalAmount)}`, 15, yPosition);
-            
-            // Signatures
-            yPosition += 20;
-            doc.text('Customer Signature', 15, yPosition);
-            doc.text('For Bhavishya Enterprise', 140, yPosition);
-            yPosition += 10;
-            doc.text('Authorized Signatory', 140, yPosition);
-            
-            // Save the PDF
-            doc.save(`Invoice_${invoice.invoiceNumber}.pdf`);
+                data.items.forEach(item => {
+                    doc.text(new Date(item.date).toLocaleDateString('en-IN'), 15, yPosition);
+                    doc.text(item.workDetails.substring(0, 30), 40, yPosition);
+                    doc.text(item.totalHours.toString(), 120, yPosition);
+                    doc.text(item.rateAmount.toString(), 140, yPosition);
+                    doc.text((item.totalHours * item.rateAmount).toFixed(2), 160, yPosition);
+                    yPosition += 10;
+                });
+                
+                // Total
+                yPosition += 10;
+                doc.line(15, yPosition, 195, yPosition);
+                yPosition += 10;
+                
+                const gstRate = 0.18;
+                const taxableAmount = data.totalAmount / (1 + gstRate);
+                const gstAmount = data.totalAmount - taxableAmount;
+                const cgst = gstAmount / 2;
+                const sgst = gstAmount / 2;
+                
+                doc.text('Subtotal:', 140, yPosition);
+                doc.text(`₹${taxableAmount.toFixed(2)}`, 160, yPosition);
+                yPosition += 10;
+                
+                doc.text('CGST (9%):', 140, yPosition);
+                doc.text(`₹${cgst.toFixed(2)}`, 160, yPosition);
+                yPosition += 10;
+                
+                doc.text('SGST (9%):', 140, yPosition);
+                doc.text(`₹${sgst.toFixed(2)}`, 160, yPosition);
+                yPosition += 10;
+                
+                doc.text('Total:', 140, yPosition);
+                doc.text(`₹${data.totalAmount.toFixed(2)}`, 160, yPosition);
+                
+                // Amount in words
+                yPosition += 15;
+                doc.text(`Amount in Words: ${numberToWords(data.totalAmount)}`, 15, yPosition);
+                
+                // Signatures
+                yPosition += 20;
+                doc.text('Customer Signature', 15, yPosition);
+                doc.text('For Bhavishya Enterprise', 140, yPosition);
+                yPosition += 10;
+                doc.text('Authorized Signatory', 140, yPosition);
+                
+                // Save the PDF
+                doc.save(`Invoice_${data.invoiceNumber}.pdf`);
+                
+            } else if (type === 'worksheet') {
+                // Add content to PDF for worksheet
+                doc.setFontSize(16);
+                doc.text('BHAVISHYA ENTERPRISE', 105, 15, { align: 'center' });
+                doc.setFontSize(10);
+                doc.text('5 T M Park, Mukund Parnera, Valsad 396020, Gujarat', 105, 22, { align: 'center' });
+                doc.text('Mobile: 8866995757 | Email: bhavishyaenterprisevalsad@gmail.com', 105, 27, { align: 'center' });
+                
+                doc.setFontSize(14);
+                doc.text('WORK SHEET', 105, 37, { align: 'center' });
+                
+                // Worksheet details
+                doc.setFontSize(10);
+                doc.text(`Date: ${new Date(data.date).toLocaleDateString('en-IN')}`, 15, 47);
+                
+                // Client details
+                doc.text('Client Details:', 15, 57);
+                doc.text(`Name: ${data.clientName}`, 15, 62);
+                doc.text(`Crane No: ${data.craneNumber}`, 15, 67);
+                
+                // Work details table
+                let yPosition = 80;
+                doc.text('Work Details', 15, yPosition);
+                doc.text('In Time', 80, yPosition);
+                doc.text('Out Time', 110, yPosition);
+                doc.text('Lunch Break', 140, yPosition);
+                doc.text('Total Hours', 170, yPosition);
+                
+                yPosition += 5;
+                doc.line(15, yPosition, 195, yPosition);
+                
+                yPosition += 10;
+                doc.text(data.workDetails.substring(0, 40), 15, yPosition);
+                doc.text(data.inTime, 80, yPosition);
+                doc.text(data.outTime, 110, yPosition);
+                doc.text(`${data.lunchTime} minutes`, 140, yPosition);
+                doc.text(`${data.totalHours} hours`, 170, yPosition);
+                
+                // Rate details
+                yPosition += 20;
+                doc.text(`Rate Type: ${data.rateType}`, 15, yPosition);
+                doc.text(`Rate Amount: ₹${data.rateAmount}`, 15, yPosition + 5);
+                doc.text(`Total Amount: ₹${(parseFloat(data.totalHours) * parseFloat(data.rateAmount)).toFixed(2)}`, 15, yPosition + 10);
+                
+                // Signatures
+                yPosition += 25;
+                doc.text('Customer Signature', 15, yPosition);
+                doc.text('Operator Signature', 140, yPosition);
+                
+                // Save the PDF
+                doc.save(`Worksheet_${data.clientName}_${new Date(data.date).toLocaleDateString('en-IN')}.pdf`);
+            }
+        }
+        
+        // Share worksheet as PDF
+        function shareWorksheetAsPDF(id) {
+            const worksheet = worksheets.find(ws => ws.id === id);
+            if (worksheet) {
+                generatePDF(worksheet, 'worksheet');
+                alert('Worksheet PDF generated successfully! You can now share it with the client.');
+            }
+        }
+        
+        // Share invoice as PDF
+        function shareInvoiceAsPDF(id) {
+            const invoice = invoices.find(inv => inv.id === id);
+            if (invoice) {
+                generatePDF(invoice, 'invoice');
+                alert('Invoice PDF generated successfully! You can now share it with the client.');
+            }
+        }
+        
+        // Edit worksheet (for admin only)
+        function editWorksheet(id) {
+            const worksheet = worksheets.find(ws => ws.id === id);
+            if (worksheet) {
+                // Populate the worksheet modal with existing data
+                document.getElementById('worksheetClient').value = worksheet.clientId;
+                document.getElementById('craneNumber').value = worksheet.craneNumber;
+                document.getElementById('workDate').value = worksheet.date;
+                document.getElementById('inTime').value = worksheet.inTime;
+                document.getElementById('outTime').value = worksheet.outTime;
+                document.getElementById('lunchTime').value = worksheet.lunchTime;
+                document.getElementById('workDetails').value = worksheet.workDetails;
+                document.getElementById('rateType').value = worksheet.rateType;
+                document.getElementById('rateAmount').value = worksheet.rateAmount;
+                document.getElementById('totalHours').value = worksheet.totalHours + ' hours';
+                
+                // Change modal title and button text
+                document.querySelector('#worksheetModal .modal-title').textContent = 'Edit Worksheet';
+                document.getElementById('saveWorksheetText').textContent = 'Update Worksheet';
+                
+                // Store the worksheet ID for update
+                document.getElementById('worksheetModal').dataset.editId = id;
+                
+                // Show the modal
+                const worksheetModal = new bootstrap.Modal(document.getElementById('worksheetModal'));
+                worksheetModal.show();
+            }
         }
         
         // Convert number to words (simplified version)
