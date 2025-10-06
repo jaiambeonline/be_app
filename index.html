@@ -1164,6 +1164,7 @@
         let worksheets = [];
         let invoices = [];
         let users = [];
+        let invoiceItems = [];
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -1369,6 +1370,83 @@
             document.getElementById('outTime').addEventListener('change', calculateTotalHours);
             document.getElementById('lunchTime').addEventListener('change', calculateTotalHours);
             
+            // Invoice functionality
+            document.getElementById('addClientToInvoice').addEventListener('click', function() {
+                // Open client modal
+                const clientModal = new bootstrap.Modal(document.getElementById('clientModal'));
+                clientModal.show();
+            });
+            
+            document.getElementById('importWorksheets').addEventListener('click', function() {
+                const clientId = document.getElementById('invoiceClient').value;
+                if (!clientId) {
+                    alert('Please select a client first');
+                    return;
+                }
+                
+                // Get current month and year
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                // Import worksheets for selected client from current month
+                db.collection('worksheets')
+                    .where('clientId', '==', clientId)
+                    .get()
+                    .then(snapshot => {
+                        invoiceItems = [];
+                        snapshot.forEach(doc => {
+                            const ws = doc.data();
+                            const wsDate = new Date(ws.date);
+                            
+                            // Only include worksheets from current month
+                            if (wsDate.getMonth() === currentMonth && wsDate.getFullYear() === currentYear) {
+                                invoiceItems.push({
+                                    id: doc.id,
+                                    date: ws.date,
+                                    inTime: ws.inTime,
+                                    outTime: ws.outTime,
+                                    lunchTime: ws.lunchTime,
+                                    totalHours: ws.totalHours,
+                                    workDetails: ws.workDetails,
+                                    rateType: ws.rateType,
+                                    rateAmount: ws.rateAmount,
+                                    amount: parseFloat(ws.totalHours) * parseFloat(ws.rateAmount)
+                                });
+                            }
+                        });
+                        
+                        updateInvoiceItemsTable();
+                    })
+                    .catch(error => {
+                        console.error('Error importing worksheets: ', error);
+                        alert('Error importing worksheets. Please try again.');
+                    });
+            });
+            
+            document.getElementById('addManualService').addEventListener('click', function() {
+                // Add empty manual service row
+                invoiceItems.push({
+                    id: 'manual_' + Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    inTime: '09:00',
+                    outTime: '17:00',
+                    lunchTime: 30,
+                    totalHours: 8,
+                    workDetails: 'Manual Service',
+                    rateType: 'per_hour',
+                    rateAmount: 0,
+                    amount: 0
+                });
+                
+                updateInvoiceItemsTable();
+            });
+            
+            document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                generateInvoice();
+            });
+            
             // Initialize modals
             const clientModal = new bootstrap.Modal(document.getElementById('clientModal'));
             const worksheetModal = new bootstrap.Modal(document.getElementById('worksheetModal'));
@@ -1388,19 +1466,18 @@
             document.getElementById('displayUserName').textContent = user.fullName;
             document.getElementById('userRoleBadge').textContent = user.role === 'admin' ? 'Admin' : 'Operator';
             
-            // Show/hide admin-only elements
+            // Show/hide elements based on role
             const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => {
-                if (user.role === 'admin') {
-                    el.style.display = '';
-                } else {
-                    el.style.display = 'none';
-                }
-            });
+            const operatorElements = document.querySelectorAll('.operator-only');
             
-            // Show user management button for admin
             if (user.role === 'admin') {
+                adminElements.forEach(el => el.style.display = '');
+                operatorElements.forEach(el => el.style.display = '');
                 document.getElementById('userManagementBtn').style.display = 'block';
+            } else if (user.role === 'operator') {
+                adminElements.forEach(el => el.style.display = 'none');
+                operatorElements.forEach(el => el.style.display = '');
+                document.getElementById('userManagementBtn').style.display = 'none';
             }
             
             // Load data from Firebase
@@ -1435,6 +1512,121 @@
                 
                 document.getElementById('totalHours').value = diffHours.toFixed(2) + ' hours';
             }
+        }
+        
+        // Update invoice items table
+        function updateInvoiceItemsTable() {
+            const invoiceItemsTable = document.getElementById('invoiceItems');
+            let totalAmount = 0;
+            
+            invoiceItemsTable.innerHTML = invoiceItems.map((item, index) => {
+                const amount = parseFloat(item.totalHours) * parseFloat(item.rateAmount);
+                totalAmount += amount;
+                
+                return `
+                    <tr>
+                        <td><input type="date" class="form-control form-control-sm" value="${item.date}" onchange="updateInvoiceItem(${index}, 'date', this.value)"></td>
+                        <td><input type="time" class="form-control form-control-sm" value="${item.inTime}" onchange="updateInvoiceItem(${index}, 'inTime', this.value)"></td>
+                        <td><input type="time" class="form-control form-control-sm" value="${item.outTime}" onchange="updateInvoiceItem(${index}, 'outTime', this.value)"></td>
+                        <td><input type="number" class="form-control form-control-sm" value="${item.lunchTime}" onchange="updateInvoiceItem(${index}, 'lunchTime', this.value)"></td>
+                        <td><input type="number" class="form-control form-control-sm" value="${item.totalHours}" onchange="updateInvoiceItem(${index}, 'totalHours', this.value)"></td>
+                        <td><input type="text" class="form-control form-control-sm" value="${item.workDetails}" onchange="updateInvoiceItem(${index}, 'workDetails', this.value)"></td>
+                        <td>
+                            <select class="form-select form-select-sm" onchange="updateInvoiceItem(${index}, 'rateType', this.value)">
+                                <option value="per_hour" ${item.rateType === 'per_hour' ? 'selected' : ''}>Per Hour</option>
+                                <option value="per_day" ${item.rateType === 'per_day' ? 'selected' : ''}>Per Day</option>
+                                <option value="fixed" ${item.rateType === 'fixed' ? 'selected' : ''}>Fixed</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="form-control form-control-sm" value="${item.rateAmount}" onchange="updateInvoiceItem(${index}, 'rateAmount', this.value)"></td>
+                        <td>₹${amount.toFixed(2)}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeInvoiceItem(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('invoiceTotal').textContent = '₹' + totalAmount.toFixed(2);
+        }
+        
+        // Update invoice item
+        function updateInvoiceItem(index, field, value) {
+            invoiceItems[index][field] = value;
+            
+            // Recalculate amount if hours or rate changed
+            if (field === 'totalHours' || field === 'rateAmount') {
+                invoiceItems[index].amount = parseFloat(invoiceItems[index].totalHours) * parseFloat(invoiceItems[index].rateAmount);
+            }
+            
+            updateInvoiceItemsTable();
+        }
+        
+        // Remove invoice item
+        function removeInvoiceItem(index) {
+            invoiceItems.splice(index, 1);
+            updateInvoiceItemsTable();
+        }
+        
+        // Generate invoice
+        function generateInvoice() {
+            const clientId = document.getElementById('invoiceClient').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            
+            if (!clientId) {
+                alert('Please select a client');
+                return;
+            }
+            
+            if (invoiceItems.length === 0) {
+                alert('Please add at least one service item');
+                return;
+            }
+            
+            const client = clients.find(c => c.id === clientId);
+            if (!client) {
+                alert('Client not found');
+                return;
+            }
+            
+            const totalAmount = invoiceItems.reduce((sum, item) => sum + (parseFloat(item.totalHours) * parseFloat(item.rateAmount)), 0);
+            
+            const invoice = {
+                invoiceNumber: invoiceNumber,
+                clientId: clientId,
+                clientName: client.name,
+                clientAddress: client.address,
+                clientState: client.state,
+                clientGST: client.gstNo,
+                clientGSTType: client.gstType,
+                date: new Date().toISOString(),
+                items: invoiceItems,
+                totalAmount: totalAmount,
+                status: 'pending',
+                createdBy: currentUser.username,
+                created: new Date().toISOString()
+            };
+            
+            // Save to Firebase
+            db.collection('invoices').add(invoice)
+                .then(() => {
+                    alert('Invoice generated successfully!');
+                    document.getElementById('invoiceForm').reset();
+                    invoiceItems = [];
+                    updateInvoiceItemsTable();
+                    loadInvoices();
+                    loadDashboardData();
+                    
+                    // Generate next invoice number
+                    const nextNumber = parseInt(invoiceNumber.split('-')[0]) + 1;
+                    document.getElementById('invoiceNumber').value = `${nextNumber.toString().padStart(3, '0')}-2025-26`;
+                })
+                .catch(error => {
+                    console.error('Error generating invoice: ', error);
+                    alert('Error generating invoice. Please try again.');
+                });
         }
         
         // Load dashboard data from Firebase
