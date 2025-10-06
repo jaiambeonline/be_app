@@ -3,1044 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bhavishya Enterprise - Crane Service Management</title>
-    
-    <!-- Firebase SDK -->
+    <title>Bhavishya Enterprise - Online Crane Management</title>
+
+    <!-- Firebase (compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- PDF helpers -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .login-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            max-width: 400px;
-            width: 90%;
-        }
-        
-        .login-header {
-            background: var(--primary);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-        }
-        
-        .login-body {
-            padding: 30px;
-        }
-        
-        .form-control {
-            border-radius: 8px;
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s;
-        }
-        
-        .form-control:focus {
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-        
-        .btn-primary {
-            background: var(--secondary);
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-primary:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .sidebar {
-            background-color: var(--primary);
-            color: white;
-            min-height: calc(100vh - 56px);
-        }
-        
-        .mobile-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--primary);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            z-index: 1000;
-        }
-        
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            border: none;
-        }
-        
-        .user-badge {
-            background: var(--secondary);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            margin-left: 5px;
-        }
-        
-        .admin-only {
-            display: none;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                display: none;
-            }
-            .main-content {
-                padding-bottom: 80px;
-            }
-        }
+        :root{--primary:#2c3e50;--secondary:#3498db;--accent:#e74c3c;--light:#ecf0f1}
+        body{font-family:Inter,Segoe UI,Helvetica,Arial;min-height:100vh;background:#f4f6f9}
+        .sidebar{background:var(--primary);color:#fff;min-height:100vh}
+        .nav-link{color:rgba(255,255,255,0.9)}
+        .nav-link.active{background:rgba(255,255,255,0.06)}
+        .card{border-radius:10px}
+        .hidden{display:none}
+        .user-badge{background:var(--secondary);color:#fff;padding:4px 10px;border-radius:20px}
     </style>
 </head>
 <body>
-    <!-- Login/Register Screen -->
-    <div id="authScreen" class="login-container">
-        <div class="login-header">
-            <h2><i class="fas fa-cogs"></i> Bhavishya Enterprise</h2>
-            <p class="mb-0">Crane Service Management</p>
-        </div>
-        <div class="login-body">
-            <!-- Login Form -->
-            <div id="loginFormContainer">
-                <h4 class="text-center mb-4">Welcome Back</h4>
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="loginEmail" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="loginEmail" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="loginPassword" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="loginPassword" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 mb-3">Sign In</button>
-                </form>
-                <div class="text-center">
-                    <p class="mb-0">Don't have an account? 
-                        <a href="#" id="showRegister" class="text-decoration-none">Sign Up</a>
-                    </p>
-                </div>
-            </div>
 
-            <!-- Register Form -->
-            <div id="registerFormContainer" class="hidden">
-                <h4 class="text-center mb-4">Create Account</h4>
-                <form id="registerForm">
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card p-4 shadow-sm">
+                <h4 class="mb-3"><i class="fas fa-cogs"></i> Bhavishya Enterprise</h4>
+                <p class="text-muted">Sign in to manage cranes, worksheets and invoices</p>
+
+                <form id="signInForm">
                     <div class="mb-3">
-                        <label for="registerName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="registerName" required>
+                        <label class="form-label">Email</label>
+                        <input id="signInEmail" class="form-control" type="email" required />
                     </div>
                     <div class="mb-3">
-                        <label for="registerEmail" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="registerEmail" required>
+                        <label class="form-label">Password</label>
+                        <input id="signInPassword" class="form-control" type="password" required />
                     </div>
-                    <div class="mb-3">
-                        <label for="registerPassword" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="registerPassword" required>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" type="submit">Sign In</button>
+                        <button id="showRegisterBtn" class="btn btn-outline-secondary" type="button">Create account</button>
                     </div>
-                    <div class="mb-3">
-                        <label for="registerCompany" class="form-label">Company Name</label>
-                        <input type="text" class="form-control" id="registerCompany" value="Bhavishya Enterprise" readonly>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 mb-3">Create Account</button>
                 </form>
-                <div class="text-center">
-                    <p class="mb-0">Already have an account? 
-                        <a href="#" id="showLogin" class="text-decoration-none">Sign In</a>
-                    </p>
-                </div>
+
+                <hr />
+                <small class="text-muted">If you have a local-only user list, sign up once using any email and the admin will convert accounts online.</small>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Main Application -->
-    <div id="appScreen" class="hidden w-100" style="min-height: 100vh; background: #f8f9fa;">
-        <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#">
-                    <i class="fas fa-cogs"></i> Bhavishya Enterprise
-                </a>
-                <div class="d-flex align-items-center">
-                    <span class="navbar-text me-3">
-                        <i class="fas fa-user"></i> <span id="displayUser">User</span>
-                        <span class="user-badge" id="userRoleBadge">User</span>
-                    </span>
-                    <button class="btn btn-sm btn-light me-2 admin-only" id="userManagementBtn">
-                        <i class="fas fa-users-cog"></i>
-                    </button>
-                    <button class="btn btn-sm btn-light" id="logoutBtn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
-            </div>
-        </nav>
-
+<!-- APP SCREEN -->
+<div id="appScreen" class="hidden">
+    <nav class="navbar navbar-expand-lg" style="background:var(--primary);">
         <div class="container-fluid">
-            <div class="row">
-                <!-- Sidebar -->
-                <div class="col-md-3 col-lg-2 sidebar p-0">
-                    <div class="p-3">
-                        <ul class="nav flex-column">
-                            <li class="nav-item">
-                                <a class="nav-link active text-white" href="#" data-tab="dashboard">
-                                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="#" data-tab="clients">
-                                    <i class="fas fa-users"></i> Clients
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="#" data-tab="worksheets">
-                                    <i class="fas fa-clipboard-list"></i> Worksheets
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="#" data-tab="invoices">
-                                    <i class="fas fa-file-invoice-dollar"></i> Invoices
-                                </a>
-                            </li>
-                            <li class="nav-item admin-only">
-                                <a class="nav-link text-white" href="#" data-tab="users">
-                                    <i class="fas fa-user-shield"></i> User Management
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Main Content -->
-                <div class="col-md-9 col-lg-10 main-content p-4">
-                    <!-- Dashboard Tab -->
-                    <div id="dashboard" class="tab-content active">
-                        <div class="row">
-                            <div class="col-md-3 col-6 mb-3">
-                                <div class="card text-white bg-primary">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h5>Total Clients</h5>
-                                                <h2 id="totalClients">0</h2>
-                                            </div>
-                                            <i class="fas fa-users fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <div class="card text-white bg-success">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h5>Worksheets</h5>
-                                                <h2 id="totalWorksheets">0</h2>
-                                            </div>
-                                            <i class="fas fa-clipboard-list fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <div class="card text-white bg-warning">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h5>Invoices</h5>
-                                                <h2 id="totalInvoices">0</h2>
-                                            </div>
-                                            <i class="fas fa-file-invoice-dollar fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <div class="card text-white bg-info">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h5>Revenue</h5>
-                                                <h2 id="totalRevenue">₹0</h2>
-                                            </div>
-                                            <i class="fas fa-rupee-sign fa-2x"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-4">
-                            <div class="col-md-8">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Recent Worksheets</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="recentWorksheets">
-                                            <p class="text-muted text-center">No worksheets found</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Recent Invoices</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="recentInvoices">
-                                            <p class="text-muted text-center">No invoices found</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Clients Tab -->
-                    <div id="clients" class="tab-content">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Client Management</h5>
-                                <button class="btn btn-primary" id="addClientBtn">
-                                    <i class="fas fa-plus"></i> Add Client
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Mobile</th>
-                                                <th>Address</th>
-                                                <th>GST No</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="clientsTable">
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted">No clients found</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Worksheets Tab -->
-                    <div id="worksheets" class="tab-content">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Worksheet Management</h5>
-                                <button class="btn btn-primary" id="addWorksheetBtn">
-                                    <i class="fas fa-plus"></i> New Worksheet
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Client</th>
-                                                <th>Crane No</th>
-                                                <th>Hours</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="worksheetsTable">
-                                            <tr>
-                                                <td colspan="7" class="text-center text-muted">No worksheets found</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Invoices Tab -->
-                    <div id="invoices" class="tab-content">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Invoice Management</h5>
-                                <button class="btn btn-primary" id="addInvoiceBtn">
-                                    <i class="fas fa-plus"></i> Create Invoice
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Invoice No</th>
-                                                <th>Client</th>
-                                                <th>Date</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="invoicesTable">
-                                            <tr>
-                                                <td colspan="6" class="text-center text-muted">No invoices found</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- User Management Tab -->
-                    <div id="users" class="tab-content">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">User Management</h5>
-                                <button class="btn btn-primary" id="addUserBtn">
-                                    <i class="fas fa-plus"></i> Add User
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Email</th>
-                                                <th>Role</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="usersTable">
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted">No users found</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <a class="navbar-brand text-white" href="#"><i class="fas fa-cogs"></i> Bhavishya Enterprise</a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3"><i class="fas fa-user"></i> <span id="displayName">User</span> <span id="displayRole" class="user-badge ms-2">Role</span></span>
+                <button id="btnLogout" class="btn btn-light btn-sm">Logout</button>
             </div>
         </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <aside class="col-md-3 sidebar p-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link active" href="#" data-tab="dashboard"> <i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-tab="clients"> <i class="fas fa-users"></i> Clients</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-tab="worksheets"> <i class="fas fa-clipboard-list"></i> Worksheets</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-tab="invoices"> <i class="fas fa-file-invoice-dollar"></i> Invoices</a></li>
+                    <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="cranes"> <i class="fas fa-truck-monster"></i> Cranes</a></li>
+                    <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="users"> <i class="fas fa-user-shield"></i> Users</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-tab="company"> <i class="fas fa-building"></i> Company</a></li>
+                </ul>
+            </aside>
+
+            <main class="col-md-9 p-4">
+                <!-- DASHBOARD -->
+                <section id="dashboard" class="tab-content">
+                    <div class="row mb-3">
+                        <div class="col-md-3"><div class="card p-3"><h6>Total Clients</h6><h3 id="totalClients">0</h3></div></div>
+                        <div class="col-md-3"><div class="card p-3"><h6>Worksheets</h6><h3 id="totalWorksheets">0</h3></div></div>
+                        <div class="col-md-3"><div class="card p-3"><h6>Invoices</h6><h3 id="totalInvoices">0</h3></div></div>
+                        <div class="col-md-3"><div class="card p-3"><h6>Revenue</h6><h3 id="totalRevenue">₹0</h3></div></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">Recent Worksheets</div>
+                                <div class="card-body p-0"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>Hours</th><th>Amount</th></tr></thead><tbody id="recentWorksheets"></tbody></table></div></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">Recent Invoices</div>
+                                <div class="card-body" id="recentInvoices"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CLIENTS -->
+                <section id="clients" class="tab-content hidden">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5>Clients</h5>
+                            <div>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">Add Client</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Mobile</th><th>GST</th><th>State</th><th>Actions</th></tr></thead><tbody id="clientsTable"></tbody></table></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- WORKSHEETS -->
+                <section id="worksheets" class="tab-content hidden">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between">
+                            <h5>Worksheets</h5>
+                            <div>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">New Worksheet</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>In</th><th>Out</th><th>Lunch</th><th>Total</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="worksheetsTable"></tbody></table></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INVOICES -->
+                <section id="invoices" class="tab-content hidden">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">Create Invoice</div>
+                                <div class="card-body">
+                                    <form id="invoiceForm">
+                                        <div class="row mb-2">
+                                            <div class="col-md-6"><label>Client</label><select id="invoiceClient" class="form-select" required><option value="">Select client</option></select></div>
+                                            <div class="col-md-6"><label>Invoice No</label><input readonly id="invoiceNo" class="form-control" value="INV-" /></div>
+                                        </div>
+
+                                        <div class="table-responsive mb-2"><table class="table"><thead><tr><th></th><th>Date</th><th>Hours</th><th>Rate</th><th>Amount</th><th></th></tr></thead><tbody id="invoiceItems"></tbody><tfoot><tr><td colspan="4" class="text-end">Subtotal</td><td id="invSubtotal">₹0</td><td></td></tr><tr><td colspan="4" class="text-end">GST (18%)</td><td id="invGST">₹0</td><td></td></tr><tr><td colspan="4" class="text-end"><strong>Total</strong></td><td id="invTotal"><strong>₹0</strong></td><td></td></tr></tfoot></table></div>
+
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="btn btn-outline-secondary" type="button" id="importClientWorksheets">Import Client Worksheets</button>
+                                            <button class="btn btn-primary" type="submit">Generate Invoice</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">Invoice History</div>
+                                <div class="card-body" id="invoicesHistory"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CRANES -->
+                <section id="cranes" class="tab-content hidden admin-only">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between"><h5>Cranes</h5><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#craneModal">Add Crane/User</button></div>
+                        <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Crane No</th><th>Assigned To</th><th>Actions</th></tr></thead><tbody id="cranesTable"></tbody></table></div></div>
+                    </div>
+                </section>
+
+                <!-- USERS -->
+                <section id="users" class="tab-content hidden admin-only">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between"><h5>Users</h5><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button></div>
+                        <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
+                    </div>
+                </section>
+
+                <!-- COMPANY -->
+                <section id="company" class="tab-content hidden">
+                    <div class="card"><div class="card-body"><h5>Bhavishya Enterprise</h5><p>Crane Service - details...</p></div></div>
+                </section>
+
+            </main>
+        </div>
     </div>
+</div>
 
-    <script>
-        // 🔥 REPLACE THIS CONFIG WITH YOUR ACTUAL FIREBASE CONFIG 🔥
-        const firebaseConfig = {
-            apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
-            authDomain: "bhavishya-enterprise.firebaseapp.com",
-            projectId: "bhavishya-enterprise",
-            storageBucket: "bhavishya-enterprise.firebasestorage.app",
-            messagingSenderId: "68829794521",
-            appId: "1:68829794521:web:2933f17847e5d043666ec8"
-        };
+<!-- MODALS -->
+<!-- Client Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5>Add / Edit Client</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="clientFormOnline"><div class="row"><div class="col-md-6"><div class="mb-3"><label>Name</label><input id="c_name" class="form-control" required></div><div class="mb-3"><label>Mobile</label><input id="c_mobile" class="form-control"></div></div><div class="col-md-6"><div class="mb-3"><label>GST</label><input id="c_gst" class="form-control"></div><div class="mb-3"><label>State</label><input id="c_state" class="form-control"></div></div></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveClientBtn" class="btn btn-primary">Save</button></div></div></div></div>
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+<!-- Worksheet Modal -->
+<div class="modal fade" id="worksheetModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5>Create Worksheet</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="worksheetFormOnline"><div class="row"><div class="col-md-6"><div class="mb-3"><label>Client</label><select id="ws_client" class="form-select"></select></div><div class="mb-3"><label>Crane</label><select id="ws_crane" class="form-select"></select></div></div><div class="col-md-6"><div class="mb-3"><label>Date</label><input id="ws_date" class="form-control" type="date"></div><div class="mb-3"><label>In Time</label><input id="ws_in" class="form-control" type="time"></div><div class="mb-3"><label>Out Time</label><input id="ws_out" class="form-control" type="time"></div><div class="mb-3"><label>Lunch Minutes</label><input id="ws_lunch" class="form-control" type="number" value="30"></div><div class="mb-3"><label>Total Hours</label><input id="ws_total" class="form-control" readonly></div></div></div><div class="mb-3"><label>Work Details</label><textarea id="ws_details" class="form-control"></textarea></div><div class="row"><div class="col-md-6"><label>Rate (₹ per hour)</label><input id="ws_rate" class="form-control" type="number" value="1500"></div><div class="col-md-6"><label>Amount (₹)</label><input id="ws_amount" class="form-control" readonly></div></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveWorksheetBtn" class="btn btn-primary">Save Worksheet</button></div></div></div></div>
 
-        let currentUser = null;
+<!-- User/Crane Modal (Admin creates auth users) -->
+<div class="modal fade" id="userModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add User / Crane (Admin)</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="userFormOnline"><div class="mb-3"><label>Email</label><input id="u_email" class="form-control" type="email" required></div><div class="mb-3"><label>Full Name</label><input id="u_name" class="form-control"></div><div class="mb-3"><label>Role</label><select id="u_role" class="form-select"><option value="operator">Operator</option><option value="admin">Admin</option></select></div><div class="mb-3"><label>Temp Password</label><input id="u_pass" class="form-control" type="password" required></div><div class="mb-3"><label>Admin password (required to restore admin session after creating user)</label><input id="admin_reauth_pass" class="form-control" type="password"></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveUserBtn" class="btn btn-primary">Create User</button></div></div></div></div>
 
-        // Authentication State Listener
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    currentUser = { ...userDoc.data(), uid: user.uid };
-                    showAppScreen();
-                    loadDashboardData();
-                    loadClients();
-                    loadWorksheets();
-                    loadInvoices();
-                    if (currentUser.role === 'admin') {
-                        loadUsers();
-                    }
-                }
-            } else {
-                showAuthScreen();
-            }
-        });
+<!-- Crane Modal (simple extra details) -->
+<div class="modal fade" id="craneModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add Crane</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="craneFormOnline"><div class="mb-3"><label>Crane No</label><input id="crane_no" class="form-control"></div><div class="mb-3"><label>Assigned User Email (optional)</label><input id="crane_user_email" class="form-control"></div></form></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button id="saveCraneBtn" class="btn btn-primary">Save Crane</button></div></div></div></div>
 
-        // Login Form
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (error) {
-                alert('Login failed: ' + error.message);
-            }
-        });
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-        // Register Form
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            
-            try {
-                const usersSnapshot = await db.collection('users').get();
-                const role = usersSnapshot.empty ? 'admin' : 'operator';
-                
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-                
-                await db.collection('users').doc(user.uid).set({
-                    name: name,
-                    email: email,
-                    role: role,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    company: 'Bhavishya Enterprise'
-                });
-                
-                alert('Account created successfully! You are logged in as ' + role);
-            } catch (error) {
-                alert('Registration failed: ' + error.message);
-            }
-        });
+<script>
+// ----------------- Firebase config (kept as requested) -----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
+  authDomain: "bhavishya-enterprise.firebaseapp.com",
+  projectId: "bhavishya-enterprise",
+  storageBucket: "bhavishya-enterprise.firebasestorage.app",
+  messagingSenderId: "68829794521",
+  appId: "1:68829794521:web:2933f17847e5d043666ec8"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            auth.signOut();
-        });
+// UI elements
+const authScreen = document.getElementById('authScreen');
+const appScreen = document.getElementById('appScreen');
+const displayName = document.getElementById('displayName');
+const displayRole = document.getElementById('displayRole');
 
-        // Tab Navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const tabName = e.target.getAttribute('data-tab');
-                switchTab(tabName);
-            });
-        });
+let currentUser = null; // firestore user doc
 
-        // User Management Button
-        document.getElementById('userManagementBtn').addEventListener('click', () => {
-            switchTab('users');
-        });
+// Auth state
+auth.onAuthStateChanged(async user => {
+  if (!user) { showAuth(); return; }
+  // load user doc
+  try {
+    const udoc = await db.collection('users').doc(user.uid).get();
+    if (!udoc.exists) {
+      // If user signs up directly, create a basic user doc
+      const newDoc = { name: user.email, email: user.email, role: 'operator', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+      await db.collection('users').doc(user.uid).set(newDoc);
+      currentUser = { uid: user.uid, ...newDoc };
+    } else {
+      currentUser = { uid: user.uid, ...(udoc.data()) };
+    }
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            
-            document.getElementById(tabName).classList.add('active');
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        }
+    showApp();
+    attachSnapshots();
+  } catch (e) { console.error(e); showAuth(); }
+});
 
-        function showAuthScreen() {
-            document.getElementById('authScreen').classList.remove('hidden');
-            document.getElementById('appScreen').classList.add('hidden');
-        }
+function showAuth(){ authScreen.classList.remove('hidden'); appScreen.classList.add('hidden'); }
+function showApp(){ authScreen.classList.add('hidden'); appScreen.classList.remove('hidden'); displayName.textContent = currentUser.name || currentUser.email; displayRole.textContent = currentUser.role || 'operator';
+  // show admin-only
+  document.querySelectorAll('.admin-only').forEach(el => { el.style.display = currentUser.role === 'admin' ? '' : 'none'; });
+}
 
-        function showAppScreen() {
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('appScreen').classList.remove('hidden');
-            document.getElementById('displayUser').textContent = currentUser.name;
-            document.getElementById('userRoleBadge').textContent = currentUser.role;
-            
-            document.querySelectorAll('.admin-only').forEach(el => {
-                el.style.display = currentUser.role === 'admin' ? '' : 'none';
-            });
-        }
+// Sign-in / Register
+document.getElementById('signInForm').addEventListener('submit', async (e)=>{ e.preventDefault();
+  const email = document.getElementById('signInEmail').value; const pass = document.getElementById('signInPassword').value;
+  try { await auth.signInWithEmailAndPassword(email, pass); } catch(err){ alert('Sign in failed: '+err.message); }
+});
 
-        // Form Toggle
-        document.getElementById('showRegister').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('loginFormContainer').classList.add('hidden');
-            document.getElementById('registerFormContainer').classList.remove('hidden');
-        });
+// Logout
+document.getElementById('btnLogout').addEventListener('click', ()=>auth.signOut());
 
-        document.getElementById('showLogin').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('registerFormContainer').classList.add('hidden');
-            document.getElementById('loginFormContainer').classList.remove('hidden');
-        });
+// Tab navigation
+document.querySelectorAll('[data-tab]').forEach(el=> el.addEventListener('click', (ev)=>{
+  ev.preventDefault(); const tab = el.getAttribute('data-tab'); showTab(tab);
+  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active')); el.classList.add('active');
+}));
+function showTab(name){ document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden')); document.getElementById(name).classList.remove('hidden'); }
 
-        // Load Data Functions
-        async function loadDashboardData() {
-            try {
-                const clientsSnapshot = await db.collection('clients').get();
-                const worksheetsSnapshot = await db.collection('worksheets').get();
-                const invoicesSnapshot = await db.collection('invoices').get();
-                
-                document.getElementById('totalClients').textContent = clientsSnapshot.size;
-                document.getElementById('totalWorksheets').textContent = worksheetsSnapshot.size;
-                document.getElementById('totalInvoices').textContent = invoicesSnapshot.size;
-                
-                // Calculate total revenue
-                let totalRevenue = 0;
-                invoicesSnapshot.forEach(doc => {
-                    const invoice = doc.data();
-                    totalRevenue += invoice.totalAmount || 0;
-                });
-                document.getElementById('totalRevenue').textContent = '₹' + totalRevenue;
-                
-                // Load recent worksheets
-                const recentWorksheets = [];
-                worksheetsSnapshot.forEach(doc => {
-                    recentWorksheets.push({ id: doc.id, ...doc.data() });
-                });
-                recentWorksheets.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                const recentWorksheetsHTML = recentWorksheets.slice(0, 5).map(ws => `
-                    <div class="border-bottom pb-2 mb-2">
-                        <div class="d-flex justify-content-between">
-                            <strong>${ws.clientName}</strong>
-                            <span class="badge bg-primary">${ws.craneNo}</span>
-                        </div>
-                        <div class="small">${ws.workDetails || 'No details'}</div>
-                        <div class="small text-muted">${new Date(ws.date).toLocaleDateString()} • ${ws.totalHours} hours</div>
-                    </div>
-                `).join('');
-                
-                document.getElementById('recentWorksheets').innerHTML = recentWorksheetsHTML || '<p class="text-muted text-center">No worksheets found</p>';
-                
-                // Load recent invoices
-                const recentInvoices = [];
-                invoicesSnapshot.forEach(doc => {
-                    recentInvoices.push({ id: doc.id, ...doc.data() });
-                });
-                recentInvoices.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                const recentInvoicesHTML = recentInvoices.slice(0, 5).map(inv => `
-                    <div class="border-bottom pb-2 mb-2">
-                        <div class="d-flex justify-content-between">
-                            <strong>${inv.invoiceNumber}</strong>
-                            <span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span>
-                        </div>
-                        <div class="small">${inv.clientName}</div>
-                        <div class="small text-muted">${new Date(inv.date).toLocaleDateString()} • ₹${inv.totalAmount}</div>
-                    </div>
-                `).join('');
-                
-                document.getElementById('recentInvoices').innerHTML = recentInvoicesHTML || '<p class="text-muted text-center">No invoices found</p>';
-                
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            }
-        }
+// ---------------- Firestore snapshots for live UI ----------------
+let unsubClients=null, unsubWorksheets=null, unsubInvoices=null, unsubUsers=null, unsubCranes=null;
+function attachSnapshots(){
+  if (unsubClients) unsubClients(); if (unsubWorksheets) unsubWorksheets(); if (unsubInvoices) unsubInvoices(); if (unsubUsers) unsubUsers(); if (unsubCranes) unsubCranes();
 
-        async function loadClients() {
-            try {
-                const clientsSnapshot = await db.collection('clients').get();
-                const clientsTable = document.getElementById('clientsTable');
-                
-                if (clientsSnapshot.empty) {
-                    clientsTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No clients found</td></tr>';
-                    return;
-                }
-                
-                clientsTable.innerHTML = '';
-                clientsSnapshot.forEach(doc => {
-                    const client = doc.data();
-                    const row = `
-                        <tr>
-                            <td>${client.name}</td>
-                            <td>${client.mobile}</td>
-                            <td>${client.address}</td>
-                            <td>${client.gstNo || 'N/A'}</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning" onclick="editClient('${doc.id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteClient('${doc.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    clientsTable.innerHTML += row;
-                });
-            } catch (error) {
-                console.error('Error loading clients:', error);
-            }
-        }
+  unsubClients = db.collection('clients').orderBy('createdAt','desc').onSnapshot(snap=>{
+    const clients = []; snap.forEach(d=>clients.push({id:d.id,...d.data()})); renderClients(clients);
+  });
 
-        async function loadWorksheets() {
-            try {
-                const worksheetsSnapshot = await db.collection('worksheets').get();
-                const worksheetsTable = document.getElementById('worksheetsTable');
-                
-                if (worksheetsSnapshot.empty) {
-                    worksheetsTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No worksheets found</td></tr>';
-                    return;
-                }
-                
-                worksheetsTable.innerHTML = '';
-                worksheetsSnapshot.forEach(doc => {
-                    const worksheet = doc.data();
-                    const row = `
-                        <tr>
-                            <td>${new Date(worksheet.date).toLocaleDateString()}</td>
-                            <td>${worksheet.clientName}</td>
-                            <td>${worksheet.craneNo}</td>
-                            <td>${worksheet.totalHours}</td>
-                            <td>₹${worksheet.amount || 0}</td>
-                            <td><span class="badge bg-success">Completed</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-info" onclick="viewWorksheet('${doc.id}')">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteWorksheet('${doc.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    worksheetsTable.innerHTML += row;
-                });
-            } catch (error) {
-                console.error('Error loading worksheets:', error);
-            }
-        }
+  unsubWorksheets = db.collection('worksheets').orderBy('date','desc').onSnapshot(snap=>{
+    const sheets = []; snap.forEach(d=>sheets.push({id:d.id,...d.data()})); renderWorksheets(sheets);
+  });
 
-        async function loadInvoices() {
-            try {
-                const invoicesSnapshot = await db.collection('invoices').get();
-                const invoicesTable = document.getElementById('invoicesTable');
-                
-                if (invoicesSnapshot.empty) {
-                    invoicesTable.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No invoices found</td></tr>';
-                    return;
-                }
-                
-                invoicesTable.innerHTML = '';
-                invoicesSnapshot.forEach(doc => {
-                    const invoice = doc.data();
-                    const row = `
-                        <tr>
-                            <td>${invoice.invoiceNumber}</td>
-                            <td>${invoice.clientName}</td>
-                            <td>${new Date(invoice.date).toLocaleDateString()}</td>
-                            <td>₹${invoice.totalAmount}</td>
-                            <td><span class="badge ${invoice.status === 'paid' ? 'bg-success' : 'bg-warning'}">${invoice.status}</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-info" onclick="viewInvoice('${doc.id}')">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-success" onclick="markInvoicePaid('${doc.id}')">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteInvoice('${doc.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    invoicesTable.innerHTML += row;
-                });
-            } catch (error) {
-                console.error('Error loading invoices:', error);
-            }
-        }
+  unsubInvoices = db.collection('invoices').orderBy('date','desc').onSnapshot(snap=>{
+    const invs = []; snap.forEach(d=>invs.push({id:d.id,...d.data()})); renderInvoices(invs);
+  });
 
-        async function loadUsers() {
-            if (currentUser.role !== 'admin') return;
-            
-            try {
-                const usersSnapshot = await db.collection('users').get();
-                const usersTable = document.getElementById('usersTable');
-                
-                if (usersSnapshot.empty) {
-                    usersTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No users found</td></tr>';
-                    return;
-                }
-                
-                usersTable.innerHTML = '';
-                usersSnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const row = `
-                        <tr>
-                            <td>${user.name}</td>
-                            <td>${user.email}</td>
-                            <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
-                            <td><span class="badge bg-success">Active</span></td>
-                            <td>
-                                ${user.uid !== currentUser.uid ? `
-                                    <button class="btn btn-sm btn-warning" onclick="editUser('${doc.id}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteUser('${doc.id}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                ` : '<span class="text-muted">Current User</span>'}
-                            </td>
-                        </tr>
-                    `;
-                    usersTable.innerHTML += row;
-                });
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
+  unsubUsers = db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{
+    const us = []; snap.forEach(d=>us.push({id:d.id,...d.data()})); renderUsers(us);
+  });
 
-        // Add Event Listeners for Buttons
-        document.getElementById('addClientBtn').addEventListener('click', showAddClientModal);
-        document.getElementById('addWorksheetBtn').addEventListener('click', showAddWorksheetModal);
-        document.getElementById('addInvoiceBtn').addEventListener('click', showAddInvoiceModal);
-        document.getElementById('addUserBtn').addEventListener('click', showAddUserModal);
+  unsubCranes = db.collection('cranes').orderBy('createdAt','desc').onSnapshot(snap=>{
+    const cs = []; snap.forEach(d=>cs.push({id:d.id,...d.data()})); renderCranes(cs);
+  });
+}
 
-        function showAddClientModal() {
-            const clientName = prompt('Enter client name:');
-            if (!clientName) return;
-            
-            const clientMobile = prompt('Enter client mobile:');
-            const clientAddress = prompt('Enter client address:');
-            const clientGST = prompt('Enter GST No (optional):') || '';
-            
-            db.collection('clients').add({
-                name: clientName,
-                mobile: clientMobile,
-                address: clientAddress,
-                gstNo: clientGST,
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                loadClients();
-                loadDashboardData();
-                alert('Client added successfully!');
-            }).catch(error => {
-                alert('Error adding client: ' + error.message);
-            });
-        }
+// ---------------- Rendering helpers ----------------
+function renderClients(clients){
+  const tbody = document.getElementById('clientsTable'); const invoiceClient = document.getElementById('invoiceClient'); const ws_client = document.getElementById('ws_client');
+  tbody.innerHTML = clients.map(c=>`<tr><td>${c.name}</td><td>${c.mobile||''}</td><td>${c.gst||'N/A'}</td><td>${c.state||''}</td><td><button class=\"btn btn-sm btn-primary\" onclick=\"editClient('${c.id}')\">Edit</button> <button class=\"btn btn-sm btn-danger\" onclick=\"deleteClient('${c.id}')\">Delete</button></td></tr>`).join('')||'<tr><td colspan="5">No clients</td></tr>';
+  invoiceClient.innerHTML = '<option value="">Select client</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  ws_client.innerHTML = '<option value="">Select client</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('totalClients').textContent = clients.length;
+}
 
-        function showAddWorksheetModal() {
-            const clientName = prompt('Enter client name:');
-            if (!clientName) return;
-            
-            const craneNo = prompt('Enter crane number:');
-            const workDate = prompt('Enter work date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-            const totalHours = prompt('Enter total hours:');
-            const amount = prompt('Enter amount:');
-            const workDetails = prompt('Enter work details:') || '';
-            
-            db.collection('worksheets').add({
-                clientName: clientName,
-                craneNo: craneNo,
-                date: workDate,
-                totalHours: parseFloat(totalHours),
-                amount: parseFloat(amount),
-                workDetails: workDetails,
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                loadWorksheets();
-                loadDashboardData();
-                alert('Worksheet added successfully!');
-            }).catch(error => {
-                alert('Error adding worksheet: ' + error.message);
-            });
-        }
+function renderWorksheets(sheets){
+  const tbody = document.getElementById('worksheetsTable'); const recent = document.getElementById('recentWorksheets');
+  tbody.innerHTML = sheets.map(s=>`<tr><td>${new Date(s.date).toLocaleDateString()}</td><td>${s.clientName}</td><td>${s.craneNo}</td><td>${s.inTime}</td><td>${s.outTime}</td><td>${s.lunchMinutes}</td><td>${s.totalHours}</td><td>₹${s.amount}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteWorksheet('${s.id}')\">Del</button></td></tr>`).join('')||'<tr><td colspan="9">No worksheets</td></tr>';
+  recent.innerHTML = sheets.slice(0,5).map(s=>`<tr><td>${new Date(s.date).toLocaleDateString()}</td><td>${s.clientName}</td><td>${s.craneNo}</td><td>${s.totalHours}</td><td>₹${s.amount}</td></tr>`).join('');
+  document.getElementById('totalWorksheets').textContent = sheets.length;
+}
 
-        function showAddInvoiceModal() {
-            const clientName = prompt('Enter client name:');
-            if (!clientName) return;
-            
-            const invoiceNumber = 'INV-' + Date.now();
-            const amount = prompt('Enter invoice amount:');
-            const workDescription = prompt('Enter work description:') || '';
-            
-            db.collection('invoices').add({
-                invoiceNumber: invoiceNumber,
-                clientName: clientName,
-                date: new Date().toISOString().split('T')[0],
-                totalAmount: parseFloat(amount),
-                workDescription: workDescription,
-                status: 'pending',
-                createdBy: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                loadInvoices();
-                loadDashboardData();
-                alert('Invoice created successfully!');
-            }).catch(error => {
-                alert('Error creating invoice: ' + error.message);
-            });
-        }
+function renderInvoices(invs){
+  const hist = document.getElementById('invoicesHistory'); const recentInv = document.getElementById('recentInvoices');
+  hist.innerHTML = invs.map(i=>`<div class=\"border p-2 mb-2\"><div class=\"d-flex justify-content-between\"><strong>${i.invoiceNumber}</strong><span>${i.status}</span></div><div>${i.clientName}</div><div>₹${i.totalAmount}</div><div class=\"mt-2\"><button class=\"btn btn-sm btn-outline-primary\" onclick=\"viewInvoice('${i.id}')\">View</button> <button class=\"btn btn-sm btn-outline-success\" onclick=\"markPaid('${i.id}')\">Mark Paid</button> <button class=\"btn btn-sm btn-outline-danger\" onclick=\"deleteInvoice('${i.id}')\">Delete</button></div></div>`).join('')||'<div>No invoices</div>';
+  recentInv.innerHTML = invs.slice(0,5).map(i=>`<div class=\"mb-2\"><strong>${i.invoiceNumber}</strong><div>${i.clientName}</div><div>₹${i.totalAmount}</div></div>`).join('');
+  document.getElementById('totalInvoices').textContent = invs.length;
+  const revenue = invs.reduce((s,i)=>s + (i.totalAmount||0),0); document.getElementById('totalRevenue').textContent = '₹'+revenue;
+}
 
-        function showAddUserModal() {
-            if (currentUser.role !== 'admin') {
-                alert('Only admin can add users');
-                return;
-            }
-            
-            const userName = prompt('Enter user full name:');
-            if (!userName) return;
-            
-            const userEmail = prompt('Enter user email:');
-            const userPassword = prompt('Enter temporary password:');
-            const userRole = prompt('Enter role (admin/operator):', 'operator');
-            
-            // Create user in Firebase Auth
-            auth.createUserWithEmailAndPassword(userEmail, userPassword)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    
-                    // Create user document
-                    return db.collection('users').doc(user.uid).set({
-                        name: userName,
-                        email: userEmail,
-                        role: userRole,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        company: 'Bhavishya Enterprise'
-                    });
-                })
-                .then(() => {
-                    loadUsers();
-                    alert('User added successfully!');
-                    // Sign out the new user and sign back in as current user
-                    auth.signOut().then(() => {
-                        auth.signInWithEmailAndPassword(currentUser.email, currentUser.password);
-                    });
-                })
-                .catch(error => {
-                    alert('Error adding user: ' + error.message);
-                });
-        }
+function renderUsers(us){
+  const tbody = document.getElementById('usersTable'); tbody.innerHTML = us.map(u=>`<tr><td>${u.email||''}</td><td>${u.name||''}</td><td>${u.role||''}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteUser('${u.id}')\">Delete</button></td></tr>`).join('')||'<tr><td colspan="4">No users</td></tr>';
+}
+function renderCranes(cs){ document.getElementById('cranesTable').innerHTML = cs.map(c=>`<tr><td>${c.craneNo}</td><td>${c.assignedTo||''}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"deleteCrane('${c.id}')\">Del</button></td></tr>`).join('')||'<tr><td colspan="3">No cranes</td></tr>'; }
 
-        // Global functions for action buttons
-        window.editClient = function(clientId) {
-            alert('Edit client functionality: ' + clientId);
-        };
+// ---------------- CRUD: Clients ----------------
+document.getElementById('saveClientBtn').addEventListener('click', async ()=>{
+  const data = { name:document.getElementById('c_name').value, mobile:document.getElementById('c_mobile').value, gst:document.getElementById('c_gst').value, state:document.getElementById('c_state').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+  try{ await db.collection('clients').add(data); bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide(); }catch(e){alert(e.message);} });
+window.editClient = async (id)=>{
+  const doc = await db.collection('clients').doc(id).get(); if(!doc.exists) return; const d = doc.data(); document.getElementById('c_name').value=d.name; document.getElementById('c_mobile').value=d.mobile; document.getElementById('c_gst').value=d.gst; document.getElementById('c_state').value=d.state; document.getElementById('clientModal').querySelector('.modal-title').textContent='Edit Client'; bootstrap.Modal.getInstance(document.getElementById('clientModal'))?.show();
+  // Save will create new - for simplicity user can delete then re-add. (Could be extended to edit.)
+}
+window.deleteClient = async (id)=>{ if(confirm('Delete client?')) { await db.collection('clients').doc(id).delete(); } }
 
-        window.deleteClient = function(clientId) {
-            if (confirm('Are you sure you want to delete this client?')) {
-                db.collection('clients').doc(clientId).delete()
-                    .then(() => {
-                        loadClients();
-                        loadDashboardData();
-                        alert('Client deleted successfully!');
-                    })
-                    .catch(error => {
-                        alert('Error deleting client: ' + error.message);
-                    });
-            }
-        };
+// ---------------- CRUD: Worksheets ----------------
+function calcHours(inT,outT,lunchM){ if(!inT||!outT) return 0; const inD=new Date('2000-01-01T'+inT); const outD=new Date('2000-01-01T'+outT); let hrs=(outD-inD)/(1000*60*60); hrs -= (lunchM||0)/60; return Math.max(0, +hrs.toFixed(2)); }
+['ws_in','ws_out','ws_lunch','ws_rate'].forEach(id=>document.getElementById(id).addEventListener('change', ()=>{
+  const h = calcHours(document.getElementById('ws_in').value, document.getElementById('ws_out').value, parseInt(document.getElementById('ws_lunch').value)||0);
+  document.getElementById('ws_total').value = h; const amt = h * (parseFloat(document.getElementById('ws_rate').value)||0); document.getElementById('ws_amount').value = amt.toFixed(2);
+}));
 
-        window.viewWorksheet = function(worksheetId) {
-            alert('View worksheet: ' + worksheetId);
-        };
+document.getElementById('saveWorksheetBtn').addEventListener('click', async ()=>{
+  const data = { clientId: document.getElementById('ws_client').value, clientName: document.getElementById('ws_client').options[document.getElementById('ws_client').selectedIndex].text, craneNo: document.getElementById('ws_crane').value, date: document.getElementById('ws_date').value, inTime: document.getElementById('ws_in').value, outTime: document.getElementById('ws_out').value, lunchMinutes: parseInt(document.getElementById('ws_lunch').value)||0, totalHours: parseFloat(document.getElementById('ws_total').value)||0, workDetails: document.getElementById('ws_details').value, ratePerHour: parseFloat(document.getElementById('ws_rate').value)||0, amount: parseFloat(document.getElementById('ws_amount').value)||0, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+  try{ await db.collection('worksheets').add(data); bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide(); }catch(e){ alert(e.message); }
+});
+window.deleteWorksheet = async id=>{ if(confirm('Delete worksheet?')) await db.collection('worksheets').doc(id).delete(); }
 
-        window.deleteWorksheet = function(worksheetId) {
-            if (confirm('Are you sure you want to delete this worksheet?')) {
-                db.collection('worksheets').doc(worksheetId).delete()
-                    .then(() => {
-                        loadWorksheets();
-                        loadDashboardData();
-                        alert('Worksheet deleted successfully!');
-                    })
-                    .catch(error => {
-                        alert('Error deleting worksheet: ' + error.message);
-                    });
-            }
-        };
+// ---------------- CRUD: Invoices ----------------
+function resetInvoiceForm(){ document.getElementById('invoiceItems').innerHTML=''; document.getElementById('invSubtotal').textContent='₹0'; document.getElementById('invGST').textContent='₹0'; document.getElementById('invTotal').textContent='₹0'; }
 
-        window.viewInvoice = function(invoiceId) {
-            alert('View invoice: ' + invoiceId);
-        };
+// import client worksheets into invoice items
+document.getElementById('importClientWorksheets').addEventListener('click', async ()=>{
+  const clientId = document.getElementById('invoiceClient').value; if(!clientId){ alert('Select client'); return; }
+  const snap = await db.collection('worksheets').where('clientId','==',clientId).get(); const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
+  // render
+  const tbody = document.getElementById('invoiceItems'); tbody.innerHTML = items.map(it=>`<tr data-id="${it.id}"><td><input type=checkbox class=\"inv-select\" checked></td><td>${it.date}</td><td>${it.totalHours}</td><td><input class=\"form-control inv-rate\" value=${it.ratePerHour}></td><td class=\"inv-amount\">₹${(it.amount||0).toFixed(2)}</td><td><button class=\"btn btn-sm btn-danger\" onclick=\"removeInvItem(this)\">Remove</button></td></tr>`).join(''); recalcInvoice();
+});
+function removeInvItem(btn){ btn.closest('tr').remove(); recalcInvoice(); }
+function recalcInvoice(){ const rows = Array.from(document.querySelectorAll('#invoiceItems tr')); let subtotal=0; rows.forEach(r=>{ const hrs = parseFloat(r.children[2].textContent)||0; const rate = parseFloat(r.querySelector('.inv-rate')?.value)||0; const amt = hrs*rate; r.querySelector('.inv-amount').textContent = '₹'+amt.toFixed(2); subtotal += amt; }); const gst = subtotal*0.18; const total = subtotal+gst; document.getElementById('invSubtotal').textContent='₹'+subtotal.toFixed(2); document.getElementById('invGST').textContent='₹'+gst.toFixed(2); document.getElementById('invTotal').textContent='₹'+total.toFixed(2); }
 
-        window.markInvoicePaid = function(invoiceId) {
-            db.collection('invoices').doc(invoiceId).update({
-                status: 'paid',
-                paidAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                loadInvoices();
-                loadDashboardData();
-                alert('Invoice marked as paid!');
-            }).catch(error => {
-                alert('Error updating invoice: ' + error.message);
-            });
-        };
+// when rate edited
+document.addEventListener('input', (e)=>{ if(e.target.classList && e.target.classList.contains('inv-rate')) recalcInvoice(); });
 
-        window.deleteInvoice = function(invoiceId) {
-            if (confirm('Are you sure you want to delete this invoice?')) {
-                db.collection('invoices').doc(invoiceId).delete()
-                    .then(() => {
-                        loadInvoices();
-                        loadDashboardData();
-                        alert('Invoice deleted successfully!');
-                    })
-                    .catch(error => {
-                        alert('Error deleting invoice: ' + error.message);
-                    });
-            }
-        };
+// Generate invoice
+document.getElementById('invoiceForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const clientId = document.getElementById('invoiceClient').value; if(!clientId) return alert('Select client'); const rows = Array.from(document.querySelectorAll('#invoiceItems tr')); if(rows.length===0) return alert('Add items'); const items = rows.map(r=>({ worksheetId: r.dataset.id, date: r.children[1].textContent, hours: parseFloat(r.children[2].textContent)||0, rate: parseFloat(r.querySelector('.inv-rate').value)||0, amount: parseFloat(r.querySelector('.inv-amount').textContent.replace('₹',''))||0 })); const subtotal = items.reduce((s,i)=>s+i.amount,0); const gst = +(subtotal*0.18).toFixed(2); const total = +(subtotal+gst).toFixed(2); const invoiceNumber = 'INV-'+Date.now(); const clientName = document.getElementById('invoiceClient').options[document.getElementById('invoiceClient').selectedIndex].text;
+  const payload = { clientId, clientName, items, subTotal: subtotal, gst, totalAmount: total, status:'pending', invoiceNumber, date: new Date().toISOString(), createdBy: currentUser.uid };
+  try{ const docRef = await db.collection('invoices').add(payload); alert('Invoice created'); resetInvoiceForm(); }catch(err){ alert(err.message); }
+});
 
-        window.editUser = function(userId) {
-            alert('Edit user functionality: ' + userId);
-        };
+window.viewInvoice = async (id)=>{ const d = await db.collection('invoices').doc(id).get(); if(!d.exists) return alert('not found'); const inv=d.data(); alert(`Invoice ${inv.invoiceNumber}\nClient: ${inv.clientName}\nTotal: ₹${inv.totalAmount}`); }
+window.deleteInvoice = async id=>{ if(confirm('Delete invoice?')) await db.collection('invoices').doc(id).delete(); }
+window.markPaid = async id=>{ await db.collection('invoices').doc(id).update({ status:'paid', paidAt: firebase.firestore.FieldValue.serverTimestamp() }); }
 
-        window.deleteUser = function(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
-                db.collection('users').doc(userId).delete()
-                    .then(() => {
-                        loadUsers();
-                        alert('User deleted successfully!');
-                    })
-                    .catch(error => {
-                        alert('Error deleting user: ' + error.message);
-                    });
-            }
-        };
-    </script>
+// ---------------- Admin: create auth user flow ----------------
+// Note: creating a Firebase Auth user with createUserWithEmailAndPassword will sign in as that user.
+// To preserve admin session, we ask admin to input their password to reauthenticate after creation.
+
+document.getElementById('saveUserBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('u_email').value; const name = document.getElementById('u_name').value; const role = document.getElementById('u_role').value; const pass = document.getElementById('u_pass').value; const adminPass = document.getElementById('admin_reauth_pass').value;
+  if(!email||!pass) return alert('Provide email and temp password');
+  if(!confirm('Creating an auth account will temporarily sign you out. You will be asked to re-enter your admin password to continue.')) return;
+  const adminEmail = auth.currentUser.email;
+  try{
+    // create auth user
+    await auth.createUserWithEmailAndPassword(email, pass);
+    const newUser = auth.currentUser; // now signed in as new user
+    // create user doc
+    await db.collection('users').doc(newUser.uid).set({ name, email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    // sign out the created user
+    await auth.signOut();
+    // sign back in as admin using provided admin password
+    await auth.signInWithEmailAndPassword(adminEmail, adminPass);
+    alert('User created successfully and admin session restored.');
+    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+  }catch(err){ alert('Error: '+err.message); try{ await auth.signOut(); auth.signInWithEmailAndPassword(adminEmail, adminPass); }catch(e){ console.warn('Restore failed',e); showAuth(); } }
+});
+
+// ---------------- Cranes ----------------
+document.getElementById('saveCraneBtn').addEventListener('click', async ()=>{ const craneNo=document.getElementById('crane_no').value; const assigned=document.getElementById('crane_user_email').value || null; if(!craneNo) return alert('Enter crane no'); await db.collection('cranes').add({ craneNo, assignedTo:assigned, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); bootstrap.Modal.getInstance(document.getElementById('craneModal')).hide(); });
+window.deleteCrane = async id=>{ if(confirm('Delete crane?')) await db.collection('cranes').doc(id).delete(); }
+
+// ---------------- Users management ----------------
+window.deleteUser = async id=>{ if(confirm('Delete user?')) await db.collection('users').doc(id).delete(); }
+
+// ---------------- Initial helper: create default admin if none ----------------
+(async function ensureAdminExists(){ const snap = await db.collection('users').limit(1).get(); if(snap.empty){ console.log('No users found - creating a public admin signup is recommended.'); } })();
+
+// End of script
+</script>
 </body>
 </html>
