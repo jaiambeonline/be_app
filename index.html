@@ -1,1111 +1,1553 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bhavishya Enterprise — Online Crane Management (GST-ready)</title>
-
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-  <!-- Bootstrap & icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-
-  <!-- PDF helpers -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <style>
-    :root {
-      --primary: #2c3e50;
-      --accent: #3498db;
-      --danger: #e74c3c;
-    }
-    body { font-family: Inter, "Segoe UI", Roboto, Arial; background:#f5f7fb; color:#222; }
-    .sidebar { background: var(--primary); color: #fff; min-height: 100vh; }
-    .nav-link { color: rgba(255,255,255,0.9); }
-    .nav-link.active { background: rgba(255,255,255,0.06); }
-    .user-badge { background: var(--accent); color:white; padding: 4px 8px; border-radius: 16px; font-size:0.8rem; }
-    .card { border-radius: 10px; }
-    .no-print { display: block; }
-    @media print {
-      .no-print { display: none !important; }
-      body { background: white; }
-    }
-
-    /* Invoice print layout */
-    .invoice-paper { max-width: 800px; margin: 20px auto; background: white; padding: 24px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
-    .invoice-header { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-    .invoice-title { font-size: 1.25rem; font-weight:700; color: var(--primary); }
-    .invoice-meta { text-align: right; font-size: 0.9rem; color:#333; }
-    .invoice-table th { background: #f1f3f5; }
-    .gst-notes { font-size: 0.85rem; color:#444; margin-top:12px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhavishya Enterprise - Crane Service Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary) !important;
+        }
+        
+        /* Desktop Sidebar */
+        .sidebar {
+            background-color: var(--primary);
+            color: white;
+            min-height: calc(100vh - 56px);
+            padding: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        /* Mobile Bottom Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            display: none;
+            justify-content: space-around;
+            padding: 10px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-nav-item {
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 5px;
+            border-radius: 5px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .mobile-nav-item.active {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .mobile-nav-icon {
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary);
+            border: none;
+        }
+        
+        .btn-danger {
+            background-color: var(--accent);
+            border: none;
+        }
+        
+        .invoice-history {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .invoice-item {
+            border-left: 4px solid var(--secondary);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+        
+        .client-statement {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .table th {
+            background-color: var(--light);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .user-role {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background-color: var(--accent);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .company-info {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .gst-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .tax-breakdown {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                margin: 50px auto;
+                max-width: 90%;
+            }
+            
+            .sidebar {
+                display: none !important;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+                padding: 15px;
+                padding-bottom: 80px; /* Space for bottom nav */
+            }
+            
+            .mobile-nav {
+                display: flex;
+            }
+            
+            .container-fluid {
+                padding: 0;
+            }
+            
+            .col-md-3, .col-md-9 {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .table-responsive {
+                font-size: 12px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .btn-sm {
+                width: auto;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .card-header {
+                padding: 12px 15px;
+            }
+            
+            .user-role {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-top: 10px;
+            }
+            
+            .company-info {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+        }
+        
+        /* Desktop specific */
+        @media (min-width: 769px) {
+            .mobile-nav {
+                display: none !important;
+            }
+            
+            .sidebar {
+                display: block !important;
+            }
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .print-area {
+                display: block !important;
+            }
+            
+            body {
+                font-size: 12px;
+            }
+            
+            .invoice-table {
+                font-size: 10px;
+            }
+        }
+        
+        .invoice-header {
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .user-badge {
+            background: var(--secondary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body>
-
-  <!-- AUTH SCREEN -->
-  <div id="authScreen" class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-md-5">
-        <div class="card shadow-sm p-4">
-          <h4 class="mb-1"><i class="fas fa-cogs"></i> Bhavishya Enterprise</h4>
-          <p class="text-muted mb-3">Sign in to manage clients, worksheets and GST invoices</p>
-
-          <form id="signInForm" class="mb-2">
-            <div class="mb-2">
-              <label class="form-label">Email</label>
-              <input id="signInEmail" class="form-control" type="email" required>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="text-center mb-4">
+            <h2><i class="fas fa-cogs"></i> Bhavishya Enterprise</h2>
+            <p class="text-muted">Crane Service Management System</p>
+        </div>
+        <form id="loginForm">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required>
             </div>
             <div class="mb-3">
-              <label class="form-label">Password</label>
-              <input id="signInPassword" class="form-control" type="password" required>
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
             </div>
-            <div class="d-grid gap-2">
-              <button class="btn btn-primary" type="submit">Sign in</button>
-              <button id="showRegister" type="button" class="btn btn-outline-secondary">Create account</button>
-            </div>
-          </form>
-
-          <div id="registerCard" class="d-none">
-            <form id="registerForm">
-              <div class="mb-2"><label class="form-label">Full name</label><input id="registerName" class="form-control" required></div>
-              <div class="mb-2"><label class="form-label">Email</label><input id="registerEmail" class="form-control" type="email" required></div>
-              <div class="mb-3"><label class="form-label">Password</label><input id="registerPassword" class="form-control" type="password" required></div>
-              <div class="d-grid gap-2"><button class="btn btn-success" type="submit">Create account</button>
-                <button id="cancelRegister" class="btn btn-link" type="button">Cancel</button>
-              </div>
-            </form>
-          </div>
-
-          <hr class="my-3">
-          <small class="text-muted">If this is your first time, create an account. The first user created becomes admin.</small>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+        <div class="mt-3 text-center">
+            <p class="mb-1"><strong>Default Users:</strong></p>
+            <p class="mb-1">Admin: BE / admin123</p>
+            <p class="mb-1">Crane Operator: crane1 / operator123</p>
+            <p class="mb-0">Crane Operator: crane2 / operator123</p>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- APP -->
-  <div id="appScreen" class="hidden">
-    <nav class="navbar navbar-expand-lg" style="background: var(--primary);">
-      <div class="container-fluid">
-        <a class="navbar-brand text-white" href="#"><i class="fas fa-cogs"></i> Bhavishya Enterprise</a>
-        <div class="d-flex align-items-center">
-          <div class="me-3 text-white">
-            <i class="fas fa-user"></i> <span id="displayName">User</span>
-            <span id="displayRole" class="user-badge ms-2">Role</span>
-          </div>
-          <button id="logoutBtn" class="btn btn-light btn-sm">Logout</button>
+    <!-- Main Application -->
+    <div id="appScreen" class="hidden">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-cogs"></i> Bhavishya Enterprise
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user"></i> <span id="displayUser">Admin</span>
+                        <span class="user-badge" id="userRoleBadge">Admin</span>
+                    </span>
+                    <button class="btn btn-sm btn-light me-2" id="userManagementBtn" style="display: none;">
+                        <i class="fas fa-users-cog"></i>
+                    </button>
+                    <button class="btn btn-sm btn-light" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Desktop Sidebar -->
+                <div class="col-md-3 col-lg-2 d-md-block sidebar no-print">
+                    <div class="position-sticky pt-3">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" data-tab="dashboard">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only operator-only">
+                                <a class="nav-link" href="#" data-tab="clients">
+                                    <i class="fas fa-users"></i> Clients
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-tab="worksheets">
+                                    <i class="fas fa-clipboard-list"></i> Worksheets
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="invoices">
+                                    <i class="fas fa-file-invoice-dollar"></i> Invoices
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="statements">
+                                    <i class="fas fa-book"></i> Client Statements
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="reports">
+                                    <i class="fas fa-chart-bar"></i> Reports
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only">
+                                <a class="nav-link" href="#" data-tab="users">
+                                    <i class="fas fa-user-shield"></i> User Management
+                                </a>
+                            </li>
+                            <li class="nav-item admin-only operator-only">
+                                <a class="nav-link" href="#" data-tab="company">
+                                    <i class="fas fa-building"></i> Company Info
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-md-9 col-lg-10 ml-sm-auto main-content">
+                    <!-- Company Info Section -->
+                    <div class="company-info no-print">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h4>Bhavishya Enterprise</h4>
+                                <p class="mb-1">Crane Service, Loading & Unloading, Workshop</p>
+                                <p class="mb-1">5 T M Park, Mukund Parnera, Valsad 396020, Gujarat</p>
+                                <p class="mb-0">Mobile: 8866995757 | Email: bhavishyaenterprisevalsad@gmail.com</p>
+                                <p class="mb-0"><span class="gst-badge">GSTIN: 24ABCDE1234F1Z5</span></p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <p class="mb-1"><strong>User:</strong> <span id="displayUserName">Admin</span></p>
+                                <p class="mb-0"><strong>Date:</strong> <span id="currentDate"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Tab -->
+                    <div id="dashboard" class="tab-content">
+                        <div class="row">
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-primary mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Total Clients</h5>
+                                                <h2 id="totalClients">0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-users fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-success mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Active Worksheets</h5>
+                                                <h2 id="activeWorksheets">0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-clipboard-list fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-warning mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Pending Invoices</h5>
+                                                <h2 id="pendingInvoices">0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card text-white bg-danger mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5>Outstanding Amount</h5>
+                                                <h2 id="outstandingAmount">₹0</h2>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-rupee-sign fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Recent Worksheets</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Client</th>
+                                                        <th>Crane No</th>
+                                                        <th>Total Hours</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="recentWorksheets">
+                                                    <!-- Recent worksheets will be populated here -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Recent Invoices</h5>
+                                    </div>
+                                    <div class="card-body invoice-history">
+                                        <div id="recentInvoices">
+                                            <!-- Recent invoices will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clients Tab -->
+                    <div id="clients" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Client Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">
+                                    <i class="fas fa-plus"></i> Add New Client
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Address</th>
+                                                <th>State</th>
+                                                <th>Mobile No</th>
+                                                <th>GST No</th>
+                                                <th>GST Type</th>
+                                                <th class="admin-only">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="clientTable">
+                                            <!-- Client data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Worksheets Tab -->
+                    <div id="worksheets" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Worksheet Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">
+                                    <i class="fas fa-plus"></i> Create New Worksheet
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Client</th>
+                                                <th>Crane No</th>
+                                                <th>In Time</th>
+                                                <th>Out Time</th>
+                                                <th>Total Hours</th>
+                                                <th>Work Details</th>
+                                                <th class="admin-only">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="worksheetTable">
+                                            <!-- Worksheet data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoices Tab -->
+                    <div id="invoices" class="tab-content hidden">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Invoice Creation</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="invoiceForm">
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="invoiceClient" class="form-label">Select Client</label>
+                                                    <select class="form-select" id="invoiceClient" required>
+                                                        <option value="">Select Client</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Invoice Number</label>
+                                                    <input type="text" class="form-control" id="invoiceNumber" value="001-2025-26" readonly>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="addClientToInvoice">
+                                                    <i class="fas fa-plus"></i> Add New Client
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="importWorksheets">
+                                                    <i class="fas fa-download"></i> Import Monthly Worksheets
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>In Time</th>
+                                                            <th>Out Time</th>
+                                                            <th>Lunch</th>
+                                                            <th>Total Hours</th>
+                                                            <th>Work Details</th>
+                                                            <th>Rate Type</th>
+                                                            <th>Rate</th>
+                                                            <th>Amount</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="invoiceItems">
+                                                        <!-- Invoice items will be populated here -->
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td colspan="8" class="text-end"><strong>Total Amount:</strong></td>
+                                                            <td><strong id="invoiceTotal">₹0</strong></td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-outline-success btn-sm" id="addManualService">
+                                                    <i class="fas fa-plus"></i> Add Manual Service
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                                <button type="button" class="btn btn-secondary me-md-2" id="saveDraft">Save Draft</button>
+                                                <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Invoice History</h5>
+                                    </div>
+                                    <div class="card-body invoice-history">
+                                        <div id="invoiceHistory">
+                                            <!-- Invoice history will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Client Statements Tab -->
+                    <div id="statements" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Client Statements</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="statementClient" class="form-label">Select Client</label>
+                                        <select class="form-select" id="statementClient">
+                                            <option value="">Select Client</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="fromDate" class="form-label">From Date</label>
+                                        <input type="date" class="form-control" id="fromDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="toDate" class="form-label">To Date</label>
+                                        <input type="date" class="form-control" id="toDate">
+                                    </div>
+                                </div>
+                                
+                                <div class="card client-statement">
+                                    <div class="card-body">
+                                        <div id="clientStatement">
+                                            <p class="text-center text-muted">Select a client to view their statement</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6>Total Invoiced</h6>
+                                                <h4 id="totalInvoiced">₹0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6>Amount Paid</h6>
+                                                <h4 id="amountPaid">₹0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6>Balance Due</h6>
+                                                <h4 id="balanceDue">₹0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Tab -->
+                    <div id="reports" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Business Reports</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="text-center">Monthly Revenue</h6>
+                                                <canvas id="revenueChart" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="text-center">Client Distribution</h6>
+                                                <canvas id="clientChart" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button class="btn btn-primary w-100 mb-2" id="exportClients">
+                                            <i class="fas fa-download"></i> Export Client List
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button class="btn btn-success w-100 mb-2" id="exportFinancial">
+                                            <i class="fas fa-download"></i> Export Financial Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Management Tab -->
+                    <div id="users" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">User Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+                                    <i class="fas fa-plus"></i> Add New User
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Full Name</th>
+                                                <th>Role</th>
+                                                <th>Created</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="userTable">
+                                            <!-- User data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Info Tab -->
+                    <div id="company" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Company Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Bhavishya Enterprise</h5>
+                                        <p><strong>Address:</strong> 5 T M Park, Mukund Parnera, Valsad 396020</p>
+                                        <p><strong>Mobile:</strong> 8866995757</p>
+                                        <p><strong>Email:</strong> bhavishyaenterprisevalsad@gmail.com</p>
+                                        <p><strong>Services:</strong> Crane Service, Loading & Unloading, Workshop</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Business Hours</h5>
+                                        <p><strong>Monday - Saturday:</strong> 8:00 AM - 8:00 PM</p>
+                                        <p><strong>Sunday:</strong> Emergency Services Only</p>
+                                        
+                                        <h5 class="mt-4">Service Areas</h5>
+                                        <p>Valsad and surrounding regions</p>
+                                        
+                                        <h5 class="mt-4">Payment Terms</h5>
+                                        <p>15 days from invoice date</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h5>About Us</h5>
+                                        <p>Bhavishya Enterprise is a trusted provider of crane services, loading and unloading solutions, and workshop services in Valsad. With years of experience and a commitment to quality, we serve both individual and commercial clients with reliable and efficient solutions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </nav>
 
-    <div class="container-fluid">
-      <div class="row">
-        <!-- Sidebar -->
-        <aside class="col-md-3 sidebar p-3">
-          <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link active" href="#" data-tab="dashboardTab"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-tab="clientsTab"><i class="fas fa-users"></i> Clients</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-tab="worksheetsTab"><i class="fas fa-clipboard-list"></i> Worksheets</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-tab="invoicesTab"><i class="fas fa-file-invoice-dollar"></i> Invoices</a></li>
-            <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="cranesTab"><i class="fas fa-truck-monster"></i> Cranes</a></li>
-            <li class="nav-item admin-only"><a class="nav-link" href="#" data-tab="usersTab"><i class="fas fa-user-shield"></i> Users</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" data-tab="companyTab"><i class="fas fa-building"></i> Company</a></li>
-          </ul>
-        </aside>
+        <!-- Mobile Bottom Navigation -->
+        <div class="mobile-nav no-print">
+            <a href="#" class="mobile-nav-item active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt mobile-nav-icon"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-tab="clients">
+                <i class="fas fa-users mobile-nav-icon"></i>
+                <span>Clients</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-tab="worksheets">
+                <i class="fas fa-clipboard-list mobile-nav-icon"></i>
+                <span>Work</span>
+            </a>
+            <a href="#" class="mobile-nav-item admin-only" data-tab="invoices">
+                <i class="fas fa-file-invoice-dollar mobile-nav-icon"></i>
+                <span>Invoices</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-tab="company">
+                <i class="fas fa-info-circle mobile-nav-icon"></i>
+                <span>Info</span>
+            </a>
+        </div>
+    </div>
 
-        <!-- Main -->
-        <main class="col-md-9 p-4">
-          <!-- Dashboard -->
-          <section id="dashboardTab" class="tab-content">
-            <div class="row mb-3">
-              <div class="col-md-3"><div class="card p-3"><h6>Total Clients</h6><h3 id="totalClients">0</h3></div></div>
-              <div class="col-md-3"><div class="card p-3"><h6>Worksheets</h6><h3 id="totalWorksheets">0</h3></div></div>
-              <div class="col-md-3"><div class="card p-3"><h6>Invoices</h6><h3 id="totalInvoices">0</h3></div></div>
-              <div class="col-md-3"><div class="card p-3"><h6>Revenue</h6><h3 id="totalRevenue">₹0</h3></div></div>
-            </div>
-            <div class="row">
-              <div class="col-md-8">
-                <div class="card">
-                  <div class="card-header">Recent Worksheets</div>
-                  <div class="card-body p-0"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>Total Hours</th><th>Amount</th></tr></thead><tbody id="recentWorksheets"></tbody></table></div></div>
+    <!-- Client Modal -->
+    <div class="modal fade" id="clientModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card">
-                  <div class="card-header">Recent Invoices</div>
-                  <div class="card-body" id="recentInvoices"></div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Clients -->
-          <section id="clientsTab" class="tab-content hidden">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Clients</h5>
-                <div>
-                  <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal">Add Client</button>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Mobile</th><th>State</th><th>GST No</th><th>GST Type</th><th>Actions</th></tr></thead><tbody id="clientsTable"></tbody></table></div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Worksheets -->
-          <section id="worksheetsTab" class="tab-content hidden">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Worksheets</h5>
-                <div>
-                  <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#worksheetModal">New Worksheet</button>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Crane</th><th>In</th><th>Out</th><th>Lunch (min)</th><th>Total Hours</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="worksheetsTable"></tbody></table></div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Invoices -->
-          <section id="invoicesTab" class="tab-content hidden">
-            <div class="row">
-              <div class="col-md-8">
-                <div class="card">
-                  <div class="card-header">Create Invoice</div>
-                  <div class="card-body">
-                    <form id="invoiceForm">
-                      <div class="row mb-2">
-                        <div class="col-md-6">
-                          <label class="form-label">Client</label>
-                          <select id="invoiceClient" class="form-select" required><option value="">Select client</option></select>
+                <div class="modal-body">
+                    <form id="clientForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="clientName" class="form-label">Client Name *</label>
+                                    <input type="text" class="form-control" id="clientName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientAddress" class="form-label">Client Address *</label>
+                                    <textarea class="form-control" id="clientAddress" rows="3" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientState" class="form-label">State *</label>
+                                    <select class="form-select" id="clientState" required>
+                                        <option value="">Select State</option>
+                                        <option value="Gujarat">Gujarat</option>
+                                        <option value="Maharashtra">Maharashtra</option>
+                                        <option value="Rajasthan">Rajasthan</option>
+                                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                        <option value="Karnataka">Karnataka</option>
+                                        <option value="Tamil Nadu">Tamil Nadu</option>
+                                        <option value="Delhi">Delhi</option>
+                                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="clientMobile" class="form-label">Client Mobile No *</label>
+                                    <input type="text" class="form-control" id="clientMobile" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="clientGST" class="form-label">Client GST No</label>
+                                    <input type="text" class="form-control" id="clientGST" placeholder="e.g., 27ABCDE1234F1Z5">
+                                    <div class="form-text">Leave blank if client is not GST registered</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">GST Type</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gstType" id="intraState" value="intra" checked>
+                                            <label class="form-check-label" for="intraState">Intra-State (CGST+SGST)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gstType" id="interState" value="inter">
+                                            <label class="form-check-label" for="interState">Inter-State (IGST)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <small>
+                                        <strong>Note:</strong> GST will be automatically calculated based on client state.<br>
+                                        Intra-State: CGST (9%) + SGST (9%) = 18%<br>
+                                        Inter-State: IGST (18%)
+                                    </small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                          <label class="form-label">Invoice Number</label>
-                          <input id="invoiceNumber" type="text" class="form-control" readonly>
-                        </div>
-                      </div>
-
-                      <div class="mb-2">
-                        <button type="button" id="importWorksheetsBtn" class="btn btn-outline-primary btn-sm">Import Client Worksheets</button>
-                        <button type="button" id="addManualLineBtn" class="btn btn-outline-secondary btn-sm">Add Manual Line</button>
-                      </div>
-
-                      <div class="table-responsive">
-                        <table class="table">
-                          <thead><tr><th></th><th>Date</th><th>Description</th><th>Hours</th><th>Rate</th><th>Amount</th><th>Action</th></tr></thead>
-                          <tbody id="invoiceItems"></tbody>
-                          <tfoot>
-                            <tr><td colspan="4" class="text-end">Subtotal</td><td id="invSubtotal">₹0</td><td></td><td></td></tr>
-                            <tr><td colspan="4" class="text-end">GST (18%)</td><td id="invGST">₹0</td><td></td><td></td></tr>
-                            <tr><td colspan="4" class="text-end"><strong>Total</strong></td><td id="invTotal"><strong>₹0</strong></td><td></td><td></td></tr>
-                          </tfoot>
-                        </table>
-                      </div>
-
-                      <div class="d-flex justify-content-end gap-2">
-                        <button type="button" id="saveInvoiceDraft" class="btn btn-secondary">Save Draft</button>
-                        <button type="submit" class="btn btn-primary">Generate Invoice</button>
-                      </div>
                     </form>
-                  </div>
                 </div>
-              </div>
-
-              <div class="col-md-4">
-                <div class="card">
-                  <div class="card-header">Invoice History</div>
-                  <div class="card-body" id="invoiceHistory"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveClient">Save Client</button>
                 </div>
-              </div>
             </div>
-          </section>
-
-          <!-- Cranes (admin) -->
-          <section id="cranesTab" class="tab-content hidden admin-only">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Cranes</h5>
-                <div><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#craneModal">Add Crane</button></div>
-              </div>
-              <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Crane No</th><th>Assigned User</th><th>Actions</th></tr></thead><tbody id="cranesTable"></tbody></table></div></div>
-            </div>
-          </section>
-
-          <!-- Users (admin) -->
-          <section id="usersTab" class="tab-content hidden admin-only">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Users</h5>
-                <div><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button></div>
-              </div>
-              <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
-            </div>
-          </section>
-
-          <!-- Company -->
-          <section id="companyTab" class="tab-content hidden">
-            <div class="card"><div class="card-body">
-              <h5>Bhavishya Enterprise</h5>
-              <p>Crane services, GST-enabled invoices, 24/7 service.</p>
-            </div></div>
-          </section>
-        </main>
-      </div>
+        </div>
     </div>
-  </div>
 
-  <!-- ===================== Modals ===================== -->
-
-  <!-- Client modal (add/edit) -->
-  <div class="modal fade" id="clientModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header"><h5 id="clientModalTitle">Add Client</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <form id="clientForm">
-            <input type="hidden" id="clientEditId" />
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-2"><label class="form-label">Name *</label><input id="clientName" class="form-control" required></div>
-                <div class="mb-2"><label class="form-label">Mobile</label><input id="clientMobile" class="form-control"></div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-2"><label class="form-label">GST No</label><input id="clientGST" class="form-control" placeholder="27ABCDE1234F1Z5"></div>
-                <div class="mb-2"><label class="form-label">State</label><input id="clientState" class="form-control"></div>
-              </div>
+    <!-- Worksheet Modal -->
+    <div class="modal fade" id="worksheetModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Worksheet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="worksheetForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="worksheetClient" class="form-label">Select Client *</label>
+                                    <select class="form-select" id="worksheetClient" required>
+                                        <option value="">Select Client</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="worksheetDate" class="form-label">Date *</label>
+                                    <input type="date" class="form-control" id="worksheetDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="craneNumber" class="form-label">Crane Number *</label>
+                                    <select class="form-select" id="craneNumber" required>
+                                        <option value="">Select Crane</option>
+                                        <option value="GJ-15-T-8866">GJ-15-T-8866</option>
+                                        <option value="GJ-15-U-5757">GJ-15-U-5757</option>
+                                        <option value="GJ-15-V-1234">GJ-15-V-1234</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="workDetails" class="form-label">Work Details *</label>
+                                    <textarea class="form-control" id="workDetails" rows="3" required></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="inTime" class="form-label">In Time *</label>
+                                    <input type="time" class="form-control" id="inTime" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="outTime" class="form-label">Out Time *</label>
+                                    <input type="time" class="form-control" id="outTime" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="lunchBreak" class="form-label">Lunch Break (Minutes)</label>
+                                    <input type="number" class="form-control" id="lunchBreak" value="30" min="0" max="120">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Total Hours</label>
+                                    <input type="text" class="form-control" id="totalHours" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="rateType" class="form-label">Rate Type *</label>
+                                    <select class="form-select" id="rateType" required>
+                                        <option value="">Select Rate Type</option>
+                                        <option value="per_hour">Per Hour</option>
+                                        <option value="per_day">Per Day</option>
+                                        <option value="fixed">Fixed Rate</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="rateAmount" class="form-label">Rate Amount (₹) *</label>
+                                    <input type="number" class="form-control" id="rateAmount" required>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveWorksheet">Save Worksheet</button>
+                </div>
             </div>
-            <div class="mb-2">
-              <label class="form-label">GST Type</label>
-              <div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gstType" id="gstIntra" value="intra" checked><label class="form-check-label" for="gstIntra">Intra-State (CGST+SGST)</label></div>
-              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gstType" id="gstInter" value="inter"><label class="form-check-label" for="gstInter">Inter-State (IGST)</label></div></div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label for="newUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password *</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="fullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">Role *</label>
+                            <select class="form-select" id="userRole" required>
+                                <option value="">Select Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="operator">Crane Operator</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveUser">Save User</button>
+                </div>
             </div>
-            <div class="mb-2"><label class="form-label">Notes</label><textarea id="clientNotes" class="form-control"></textarea></div>
-          </form>
         </div>
-        <div class="modal-footer no-print">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button id="saveClientBtn" class="btn btn-primary">Save Client</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Worksheet modal (add/edit) -->
-  <div class="modal fade" id="worksheetModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header"><h5 id="worksheetModalTitle">New Worksheet</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <form id="worksheetForm">
-            <input type="hidden" id="worksheetEditId" />
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-2"><label class="form-label">Client</label><select id="wsClient" class="form-select" required><option value="">Select client</option></select></div>
-                <div class="mb-2"><label class="form-label">Crane</label><select id="wsCrane" class="form-select"><option value="">Select crane</option></select></div>
-                <div class="mb-2"><label class="form-label">Date</label><input id="wsDate" class="form-control" type="date" required></div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-2"><label class="form-label">In Time</label><input id="wsIn" class="form-control" type="time" required></div>
-                <div class="mb-2"><label class="form-label">Out Time</label><input id="wsOut" class="form-control" type="time" required></div>
-                <div class="mb-2"><label class="form-label">Lunch (minutes)</label><input id="wsLunch" class="form-control" type="number" value="30"></div>
-              </div>
+    <!-- Invoice Preview Modal -->
+    <div class="modal fade" id="invoicePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invoice Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="invoicePreview">
+                        <!-- Invoice preview will be generated here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="printInvoice">Print Invoice</button>
+                    <button type="button" class="btn btn-success" id="downloadInvoice">Download PDF</button>
+                </div>
             </div>
-
-            <div class="row mt-2">
-              <div class="col-md-4"><label>Total Hours</label><input id="wsTotalHours" class="form-control" readonly></div>
-              <div class="col-md-4"><label>Rate (₹/hr)</label><input id="wsRate" class="form-control" type="number" value="1500"></div>
-              <div class="col-md-4"><label>Amount (₹)</label><input id="wsAmount" class="form-control" readonly></div>
-            </div>
-
-            <div class="mt-2"><label>Work Details</label><textarea id="wsDetails" class="form-control"></textarea></div>
-          </form>
         </div>
-        <div class="modal-footer no-print">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button id="saveWorksheetBtn" class="btn btn-primary">Save Worksheet</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Invoice view/edit modal -->
-  <div class="modal fade" id="invoiceViewModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header"><h5>Invoice</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <div id="invoicePrintArea">
-            <!-- dynamic invoice HTML inserted here -->
-          </div>
-        </div>
-        <div class="modal-footer no-print">
-          <button class="btn btn-outline-secondary" id="downloadPdfBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
-          <button class="btn btn-success" id="waShareBtn"><i class="fab fa-whatsapp"></i> Share (WhatsApp)</button>
-          <button class="btn btn-primary" id="emailShareBtn"><i class="fas fa-envelope"></i> Share (Email)</button>
-          <button class="btn btn-secondary" id="printInvoiceBtn"><i class="fas fa-print"></i> Print</button>
-          <button class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- User modal (admin creates auth user) -->
-  <div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header"><h5>Add Auth User</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <form id="userForm">
-            <div class="mb-2"><label>Email</label><input id="userEmail" class="form-control" type="email" required></div>
-            <div class="mb-2"><label>Full Name</label><input id="userFullName" class="form-control"></div>
-            <div class="mb-2"><label>Role</label><select id="userRole" class="form-select"><option value="operator">Operator</option><option value="admin">Admin</option></select></div>
-            <div class="mb-2"><label>Temporary Password</label><input id="userTempPass" class="form-control" type="password" required></div>
-            <div class="mb-2"><label>Re-enter admin password to restore session</label><input id="adminReauthPass" class="form-control" type="password" required></div>
-          </form>
-        </div>
-        <div class="modal-footer no-print">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button id="createAuthUserBtn" class="btn btn-primary">Create User</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Crane modal -->
-  <div class="modal fade" id="craneModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header"><h5>Add Crane</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <form id="craneForm">
-            <div class="mb-2"><label>Crane No</label><input id="craneNo" class="form-control" required></div>
-            <div class="mb-2"><label>Assigned user email (optional)</label><input id="craneAssign" class="form-control"></div>
-          </form>
-        </div>
-        <div class="modal-footer no-print">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button id="saveCraneBtn" class="btn btn-primary">Save Crane</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Confirm delete modal could be added (optional) -->
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-  /********************************************************************
-   * Firebase config (kept as requested)
-   ********************************************************************/
-  const firebaseConfig = {
-    apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
-    authDomain: "bhavishya-enterprise.firebaseapp.com",
-    projectId: "bhavishya-enterprise",
-    storageBucket: "bhavishya-enterprise.firebasestorage.app",
-    messagingSenderId: "68829794521",
-    appId: "1:68829794521:web:2933f17847e5d043666ec8"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  /********************************************************************
-   * State
-   ********************************************************************/
-  let currentUserDoc = null; // loaded from firestore 'users' collection
-  let unsubscribe = {};
-  let editingClientId = null;
-  let editingWorksheetId = null;
-  let editingInvoiceId = null;
-
-  /********************************************************************
-   * UI helpers
-   ********************************************************************/
-  function $(id){ return document.getElementById(id); }
-  function show(el){ el.classList.remove('hidden'); }
-  function hide(el){ el.classList.add('hidden'); }
-
-  /********************************************************************
-   * Auth flow
-   ********************************************************************/
-  auth.onAuthStateChanged(async (u) => {
-    if (!u) { // show auth screen
-      $('authScreen').classList.remove('hidden');
-      $('appScreen').classList.add('hidden');
-      return;
-    }
-    // load user doc (or create if none)
-    const doc = await db.collection('users').doc(u.uid).get();
-    if (!doc.exists) {
-      // new users default to operator
-      await db.collection('users').doc(u.uid).set({
-        name: u.email,
-        email: u.email,
-        role: 'operator',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
-    currentUserDoc = (await db.collection('users').doc(u.uid).get()).data();
-    currentUserDoc.uid = u.uid;
-
-    // show app screen
-    $('authScreen').classList.add('hidden');
-    $('appScreen').classList.remove('hidden');
-    $('displayName').textContent = currentUserDoc.name || currentUserDoc.email || 'User';
-    $('displayRole').textContent = (currentUserDoc.role || 'operator').toUpperCase();
-
-    // show/hide admin-only
-    document.querySelectorAll('.admin-only').forEach(el=>{
-      el.style.display = currentUserDoc.role === 'admin' ? '' : 'none';
-    });
-
-    attachSnapshots();
-  });
-
-  // sign in
-  $('signInForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = $('signInEmail').value;
-    const pass = $('signInPassword').value;
-    try {
-      await auth.signInWithEmailAndPassword(email, pass);
-    } catch(err) {
-      alert('Sign-in failed: ' + err.message);
-    }
-  });
-
-  // register (simple)
-  $('showRegister').addEventListener('click', ()=> {
-    document.getElementById('registerCard').classList.remove('d-none');
-  });
-  $('cancelRegister').addEventListener('click', ()=> {
-    document.getElementById('registerCard').classList.add('d-none');
-  });
-  $('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = $('registerName').value;
-    const email = $('registerEmail').value;
-    const password = $('registerPassword').value;
-    try {
-      const userCred = await auth.createUserWithEmailAndPassword(email, password);
-      // create user doc
-      await db.collection('users').doc(userCred.user.uid).set({
-        name, email, role: 'admin', createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      alert('Account created. You are signed in.');
-    } catch(err) {
-      alert('Register failed: ' + err.message);
-    }
-  });
-
-  // logout
-  $('logoutBtn').addEventListener('click', ()=> auth.signOut());
-
-  /********************************************************************
-   * Tabs
-   ********************************************************************/
-  document.querySelectorAll('[data-tab]').forEach(el=>{
-    el.addEventListener('click', (ev)=>{
-      ev.preventDefault();
-      const t = el.getAttribute('data-tab');
-      showTab(t);
-      document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));
-      el.classList.add('active');
-    });
-  });
-  function showTab(tabId){
-    document.querySelectorAll('.tab-content').forEach(s=> s.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-  }
-
-  /********************************************************************
-   * Attach real-time snapshots
-   ********************************************************************/
-  function attachSnapshots(){
-    // detach old
-    for (const k in unsubscribe) { if (unsubscribe[k]) unsubscribe[k](); }
-    unsubscribe.clients = db.collection('clients').orderBy('createdAt','desc').onSnapshot(snap=>{
-      const clients = []; snap.forEach(d=>clients.push({ id: d.id, ...d.data() })); renderClients(clients);
-    });
-    unsubscribe.worksheets = db.collection('worksheets').orderBy('date','desc').onSnapshot(snap=>{
-      const ws = []; snap.forEach(d=>ws.push({ id: d.id, ...d.data() })); renderWorksheets(ws);
-    });
-    unsubscribe.invoices = db.collection('invoices').orderBy('createdAt','desc').onSnapshot(snap=>{
-      const inv = []; snap.forEach(d=>inv.push({ id: d.id, ...d.data() })); renderInvoices(inv);
-    });
-    unsubscribe.users = db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{
-      const us = []; snap.forEach(d=>us.push({ id: d.id, ...d.data() })); renderUsers(us);
-    });
-    unsubscribe.cranes = db.collection('cranes').orderBy('createdAt','desc').onSnapshot(snap=>{
-      const cs = []; snap.forEach(d=>cs.push({ id: d.id, ...d.data() })); renderCranes(cs);
-    });
-  }
-
-  /********************************************************************
-   * Renderers
-   ********************************************************************/
-  function renderClients(clients){
-    const tbody = $('clientsTable');
-    if (!clients.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No clients</td></tr>'; $('invoiceClient').innerHTML = '<option value="">Select client</option>'; $('wsClient').innerHTML = '<option value="">Select client</option>'; return; }
-    tbody.innerHTML = clients.map(c=>`
-      <tr>
-        <td>${c.name}</td>
-        <td>${c.mobile || ''}</td>
-        <td>${c.state || ''}</td>
-        <td>${c.gst || 'N/A'}</td>
-        <td>${c.gstType === 'inter' ? 'IGST' : 'CGST+SGST'}</td>
-        <td>
-          <button class="btn btn-sm btn-primary" onclick="openEditClient('${c.id}')"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="deleteClient('${c.id}')"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>
-    `).join('');
-    // populate selects
-    $('invoiceClient').innerHTML = '<option value="">Select client</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    $('wsClient').innerHTML = '<option value="">Select client</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    $('totalClients').textContent = clients.length;
-  }
-
-  function renderWorksheets(ws){
-    const tbody = $('worksheetsTable');
-    if (!ws.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No worksheets</td></tr>'; $('recentWorksheets').innerHTML=''; return; }
-    tbody.innerHTML = ws.map(w=>`
-      <tr>
-        <td>${new Date(w.date).toLocaleDateString()}</td>
-        <td>${w.clientName}</td>
-        <td>${w.craneNo || ''}</td>
-        <td>${w.inTime || ''}</td>
-        <td>${w.outTime || ''}</td>
-        <td>${w.lunchMinutes || 0}</td>
-        <td>${Number(w.totalHours||0).toFixed(2)}</td>
-        <td>₹${Number(w.amount||0).toFixed(2)}</td>
-        <td>
-          <button class="btn btn-sm btn-primary" onclick="openEditWorksheet('${w.id}')"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="deleteWorksheet('${w.id}')"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>
-    `).join('');
-    $('recentWorksheets').innerHTML = ws.slice(0,5).map(w=>`<tr><td>${new Date(w.date).toLocaleDateString()}</td><td>${w.clientName}</td><td>${w.craneNo || ''}</td><td>${Number(w.totalHours||0).toFixed(2)}</td><td>₹${Number(w.amount||0).toFixed(2)}</td></tr>`).join('');
-    $('totalWorksheets').textContent = ws.length;
-  }
-
-  function renderInvoices(invs){
-    const hist = $('invoiceHistory'); const recent = $('recentInvoices');
-    if (!invs.length) { hist.innerHTML = '<div class="text-muted">No invoices</div>'; recent.innerHTML = ''; $('totalInvoices').textContent = 0; $('totalRevenue').textContent = '₹0'; return; }
-    hist.innerHTML = invs.map(i=>`
-      <div class="border p-2 mb-2">
-        <div class="d-flex justify-content-between">
-          <strong>${i.invoiceNumber}</strong>
-          <span class="badge ${i.status==='paid'?'bg-success':'bg-warning'}">${i.status}</span>
-        </div>
-        <div>${i.clientName}</div>
-        <div>₹${Number(i.totalAmount).toFixed(2)}</div>
-        <div class="mt-2">
-          <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice('${i.id}')"><i class="fas fa-eye"></i></button>
-          <button class="btn btn-sm btn-outline-success" onclick="markInvoicePaid('${i.id}')"><i class="fas fa-check"></i></button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteInvoice('${i.id}')"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>
-    `).join('');
-    recent.innerHTML = invs.slice(0,5).map(i=>`<div class="mb-2"><strong>${i.invoiceNumber}</strong><div>${i.clientName}</div><div>₹${Number(i.totalAmount).toFixed(2)}</div></div>`).join('');
-    const revenue = invs.reduce((s,i)=>s + Number(i.totalAmount||0), 0);
-    $('totalInvoices').textContent = invs.length;
-    $('totalRevenue').textContent = '₹' + revenue.toFixed(2);
-  }
-
-  function renderUsers(us){
-    const tbody = $('usersTable');
-    if (!us.length) { tbody.innerHTML = '<tr><td colspan="4">No users</td></tr>'; return; }
-    tbody.innerHTML = us.map(u=>`
-      <tr>
-        <td>${u.email||''}</td>
-        <td>${u.name||''}</td>
-        <td>${u.role||''}</td>
-        <td><button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')">Delete</button></td>
-      </tr>
-    `).join('');
-  }
-
-  function renderCranes(cs){
-    const tbody = $('cranesTable');
-    if(!cs.length){ tbody.innerHTML = '<tr><td colspan="3">No cranes</td></tr>'; $('wsCrane').innerHTML = '<option value="">Select crane</option>'; return; }
-    tbody.innerHTML = cs.map(c=>`<tr><td>${c.craneNo}</td><td>${c.assignedTo||''}</td><td><button class="btn btn-sm btn-danger" onclick="deleteCrane('${c.id}')"><i class="fas fa-trash'></i></button></td></tr>`).join('');
-    $('wsCrane').innerHTML = '<option value="">Select crane</option>' + cs.map(c=>`<option value="${c.craneNo}">${c.craneNo}</option>`).join('');
-  }
-
-  /********************************************************************
-   * Client CRUD
-   ********************************************************************/
-  $('saveClientBtn').addEventListener('click', async ()=>{
-    const id = $('clientEditId').value;
-    const data = {
-      name: $('clientName').value,
-      mobile: $('clientMobile').value,
-      gst: $('clientGST').value,
-      state: $('clientState').value,
-      gstType: document.querySelector('input[name="gstType"]:checked').value,
-      notes: $('clientNotes').value,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    try {
-      if (id) {
-        await db.collection('clients').doc(id).update(data);
-      } else {
-        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        await db.collection('clients').add(data);
-      }
-      bootstrap.Modal.getInstance($('clientModal')).hide();
-      $('clientForm').reset();
-      $('clientEditId').value = '';
-      $('clientModalTitle').textContent = 'Add Client';
-    } catch(err) { alert('Client save failed: ' + err.message); }
-  });
-
-  window.openEditClient = async (id) => {
-    // fill modal
-    const doc = await db.collection('clients').doc(id).get();
-    if (!doc.exists) return alert('Client not found');
-    const c = doc.data();
-    $('clientEditId').value = id;
-    $('clientName').value = c.name || '';
-    $('clientMobile').value = c.mobile || '';
-    $('clientGST').value = c.gst || '';
-    $('clientState').value = c.state || '';
-    if (c.gstType === 'inter') document.getElementById('gstInter').checked = true;
-    else document.getElementById('gstIntra').checked = true;
-    $('clientNotes').value = c.notes || '';
-    $('clientModalTitle').textContent = 'Edit Client';
-    bootstrap.Modal.getInstance($('clientModal'))?.show() ?? new bootstrap.Modal($('clientModal')).show();
-  };
-
-  window.deleteClient = async (id) => {
-    if (!confirm('Delete client?')) return;
-    try { await db.collection('clients').doc(id).delete(); } catch(err){ alert(err.message); }
-  };
-
-  /********************************************************************
-   * Worksheet CRUD
-   ********************************************************************/
-  // calculate total hours & amount
-  function calculateWorksheetTotals() {
-    const inTime = $('wsIn').value; const outTime = $('wsOut').value;
-    const lunch = parseFloat($('wsLunch').value)||0;
-    if (!inTime || !outTime) { $('wsTotalHours').value = ''; $('wsAmount').value = ''; return; }
-    const inD = new Date('2000-01-01T' + inTime);
-    const outD = new Date('2000-01-01T' + outTime);
-    let diff = (outD - inD)/(1000*60*60);
-    diff -= (lunch/60);
-    if (diff < 0) diff = 0;
-    $('wsTotalHours').value = diff.toFixed(2);
-    const rate = parseFloat($('wsRate').value)||0;
-    $('wsAmount').value = (diff * rate).toFixed(2);
-  }
-  ['wsIn','wsOut','wsLunch','wsRate'].forEach(id => { $(id).addEventListener('change', calculateWorksheetTotals); });
-
-  $('saveWorksheetBtn').addEventListener('click', async ()=>{
-    const id = $('worksheetEditId').value;
-    const data = {
-      clientId: $('wsClient').value,
-      clientName: $('wsClient').options[$('wsClient').selectedIndex].text,
-      craneNo: $('wsCrane').value,
-      date: $('wsDate').value,
-      inTime: $('wsIn').value,
-      outTime: $('wsOut').value,
-      lunchMinutes: parseInt($('wsLunch').value)||0,
-      totalHours: parseFloat($('wsTotalHours').value)||0,
-      workDetails: $('wsDetails').value,
-      ratePerHour: parseFloat($('wsRate').value)||0,
-      amount: parseFloat($('wsAmount').value)||0,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    try {
-      if (id) {
-        await db.collection('worksheets').doc(id).update(data);
-      } else {
-        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        await db.collection('worksheets').add(data);
-      }
-      bootstrap.Modal.getInstance($('worksheetModal')).hide();
-      document.getElementById('worksheetForm').reset();
-      $('worksheetEditId').value = '';
-      $('worksheetModalTitle').textContent = 'New Worksheet';
-    } catch(err) { alert('Worksheet save failed: ' + err.message); }
-  });
-
-  window.openEditWorksheet = async (id) => {
-    const doc = await db.collection('worksheets').doc(id).get();
-    if (!doc.exists) return alert('Worksheet not found');
-    const w = doc.data();
-    $('worksheetEditId').value = id;
-    $('wsClient').value = w.clientId || '';
-    $('wsCrane').value = w.craneNo || '';
-    $('wsDate').value = w.date || '';
-    $('wsIn').value = w.inTime || '';
-    $('wsOut').value = w.outTime || '';
-    $('wsLunch').value = w.lunchMinutes || 30;
-    $('wsTotalHours').value = w.totalHours || '';
-    $('wsRate').value = w.ratePerHour || 1500;
-    $('wsAmount').value = w.amount || 0;
-    $('wsDetails').value = w.workDetails || '';
-    $('worksheetModalTitle').textContent = 'Edit Worksheet';
-    bootstrap.Modal.getInstance($('worksheetModal'))?.show() ?? new bootstrap.Modal($('worksheetModal')).show();
-  };
-
-  window.deleteWorksheet = async (id) => {
-    if (!confirm('Delete worksheet?')) return;
-    try { await db.collection('worksheets').doc(id).delete(); } catch(err){ alert(err.message); }
-  };
-
-  /********************************************************************
-   * Invoice creation & CRUD
-   ********************************************************************/
-  // generate invoice number
-  function nextInvoiceNumber() {
-    const dt = new Date(); const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0');
-    return `INV-${y}${m}-${Date.now().toString().slice(-5)}`;
-  }
-  $('invoiceNumber').value = nextInvoiceNumber();
-
-  // Import client worksheets (unbilled)
-  $('importWorksheetsBtn').addEventListener('click', async ()=>{
-    const clientId = $('invoiceClient').value; if (!clientId) return alert('Select client');
-    // fetch worksheets for this client
-    const snap = await db.collection('worksheets').where('clientId','==',clientId).get();
-    if (snap.empty) return alert('No worksheets found for this client');
-    const items = [];
-    snap.forEach(d => { const w = d.data(); items.push({ id: d.id, date: w.date, desc: w.workDetails || 'Crane work', hours: w.totalHours || 0, rate: w.ratePerHour || 0, amount: w.amount || 0 }); });
-    // populate invoice items
-    const tbody = $('invoiceItems'); items.forEach(it => {
-      const row = document.createElement('tr');
-      row.dataset.wsId = it.id;
-      row.innerHTML = `
-        <td><input type="checkbox" class="inv-check" checked></td>
-        <td>${it.date}</td>
-        <td><input class="form-control inv-desc" value="${escapeHtml(it.desc)}"></td>
-        <td><input type="number" class="form-control inv-hours" value="${it.hours}"></td>
-        <td><input type="number" class="form-control inv-rate" value="${it.rate}"></td>
-        <td class="inv-amount">₹${Number(it.amount|| (it.hours*it.rate)).toFixed(2)}</td>
-        <td><button class="btn btn-sm btn-danger" type="button" onclick="removeInvoiceRow(this)"><i class="fas fa-trash"></i></button></td>
-      `;
-      tbody.appendChild(row);
-    });
-    recalcInvoice();
-  });
-
-  // Add manual service line
-  $('addManualLineBtn').addEventListener('click', ()=>{
-    const tbody = $('invoiceItems');
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><input type="checkbox" class="inv-check" checked></td>
-      <td>${new Date().toISOString().split('T')[0]}</td>
-      <td><input class="form-control inv-desc" value="Manual service"></td>
-      <td><input type="number" class="form-control inv-hours" value="1"></td>
-      <td><input type="number" class="form-control inv-rate" value="0"></td>
-      <td class="inv-amount">₹0.00</td>
-      <td><button class="btn btn-sm btn-danger" type="button" onclick="removeInvoiceRow(this)"><i class="fas fa-trash"></i></button></td>
-    `;
-    tbody.appendChild(row);
-    recalcInvoice();
-  });
-
-  window.removeInvoiceRow = (btn) => { btn.closest('tr').remove(); recalcInvoice(); };
-
-  // recalc invoice totals
-  function recalcInvoice() {
-    const rows = Array.from(document.querySelectorAll('#invoiceItems tr'));
-    let subtotal = 0;
-    rows.forEach(r => {
-      const checked = r.querySelector('.inv-check') ? r.querySelector('.inv-check').checked : true;
-      if(!checked) return;
-      const hrs = parseFloat(r.querySelector('.inv-hours')?.value) || 0;
-      const rate = parseFloat(r.querySelector('.inv-rate')?.value) || 0;
-      const amt = hrs * rate;
-      (r.querySelector('.inv-amount')).textContent = '₹' + amt.toFixed(2);
-      subtotal += amt;
-    });
-    const gst = +(subtotal * 0.18).toFixed(2);
-    const total = +(subtotal + gst).toFixed(2);
-    $('invSubtotal').textContent = '₹' + subtotal.toFixed(2);
-    $('invGST').textContent = '₹' + gst.toFixed(2);
-    $('invTotal').textContent = '₹' + total.toFixed(2);
-  }
-
-  // live recalc when inputs change
-  document.addEventListener('input', function(e){
-    if (e.target.classList && (e.target.classList.contains('inv-hours') || e.target.classList.contains('inv-rate') || e.target.classList.contains('inv-check'))) {
-      recalcInvoice();
-    }
-  });
-
-  // save draft
-  $('saveInvoiceDraft').addEventListener('click', async ()=>{
-    const clientId = $('invoiceClient').value; if (!clientId) return alert('Select client');
-    const items = collectInvoiceItems();
-    if (!items.length) return alert('No items added');
-    const payload = {
-      clientId, clientName: $('invoiceClient').options[$('invoiceClient').selectedIndex].text,
-      items, subTotal: parseFloat($('invSubtotal').textContent.replace('₹',''))||0,
-      gst: parseFloat($('invGST').textContent.replace('₹',''))||0,
-      totalAmount: parseFloat($('invTotal').textContent.replace('₹',''))||0,
-      status: 'draft',
-      invoiceNumber: $('invoiceNumber').value || nextInvoiceNumber(),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    try {
-      await db.collection('invoices').add(payload);
-      alert('Draft saved');
-      // reset form
-      $('invoiceItems').innerHTML = '';
-      recalcInvoice();
-      $('invoiceNumber').value = nextInvoiceNumber();
-    } catch(err) { alert(err.message); }
-  });
-
-  // generate final invoice
-  $('invoiceForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const clientId = $('invoiceClient').value; if (!clientId) return alert('Select client');
-    const items = collectInvoiceItems();
-    if (!items.length) return alert('No items added');
-    const subtotal = parseFloat($('invSubtotal').textContent.replace('₹','')) || 0;
-    const gst = parseFloat($('invGST').textContent.replace('₹','')) || 0;
-    const total = parseFloat($('invTotal').textContent.replace('₹','')) || 0;
-    const invoiceNumber = $('invoiceNumber').value || nextInvoiceNumber();
-    const clientName = $('invoiceClient').options[$('invoiceClient').selectedIndex].text;
-    const payload = { clientId, clientName, items, subTotal: subtotal, gst, totalAmount: total, status: 'pending', invoiceNumber, date: new Date().toISOString(), createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-    try {
-      const docRef = await db.collection('invoices').add(payload);
-      // optionally mark worksheets as invoiced (if they were linked)
-      alert('Invoice created: ' + invoiceNumber);
-      // clear
-      $('invoiceItems').innerHTML = '';
-      recalcInvoice();
-      $('invoiceNumber').value = nextInvoiceNumber();
-      // switch to invoices tab
-    } catch(err) { alert(err.message); }
-  });
-
-  function collectInvoiceItems() {
-    const rows = Array.from(document.querySelectorAll('#invoiceItems tr'));
-    const items = [];
-    rows.forEach(r => {
-      const checked = r.querySelector('.inv-check') ? r.querySelector('.inv-check').checked : true;
-      if(!checked) return;
-      const wsId = r.dataset.wsId || null;
-      const date = r.children[1].textContent;
-      const desc = r.querySelector('.inv-desc') ? r.querySelector('.inv-desc').value : r.children[2].textContent;
-      const hours = parseFloat(r.querySelector('.inv-hours')?.value) || 0;
-      const rate = parseFloat(r.querySelector('.inv-rate')?.value) || 0;
-      const amount = +(hours * rate).toFixed(2);
-      items.push({ worksheetId: wsId, date, description: desc, hours, rate, amount });
-    });
-    return items;
-  }
-
-  /********************************************************************
-   * Invoice view / PDF / share
-   ********************************************************************/
-  window.viewInvoice = async (id) => {
-    editingInvoiceId = id;
-    const doc = await db.collection('invoices').doc(id).get();
-    if (!doc.exists) return alert('Invoice not found');
-    const inv = doc.data();
-    // build invoice HTML
-    const invoiceHtml = buildInvoiceHtml(inv);
-    $('invoicePrintArea').innerHTML = invoiceHtml;
-    // show modal
-    bootstrap.Modal.getInstance($('invoiceViewModal'))?.show() ?? new bootstrap.Modal($('invoiceViewModal')).show();
-  };
-
-  function buildInvoiceHtml(inv) {
-    // GST split logic: we'll assume 18% total — split if intra
-    const gstPercent = 18;
-    const isInter = inv.clientId ? true : false; // default — we will look up client to determine
-    // fetch client to determine gst type synchronously? We make it async in caller; for simplicity, compute numbers now.
-    const sub = Number(inv.subTotal||0);
-    const gstAmount = Number(inv.gst|| (sub * gstPercent / 100));
-    const total = Number(inv.totalAmount || (sub + gstAmount));
-    // Format items table
-    const rows = (inv.items || []).map(it=>`<tr><td>${escapeHtml(it.description)}</td><td class="text-end">${it.hours}</td><td class="text-end">₹${Number(it.rate).toFixed(2)}</td><td class="text-end">₹${Number(it.amount).toFixed(2)}</td></tr>`).join('');
-    // header with company & client
-    return `
-      <div class="invoice-paper" id="invoicePaper">
-        <div class="invoice-header">
-          <div>
-            <h3 class="invoice-title">Bhavishya Enterprise</h3>
-            <div>5 T M Park, Mukund Parnera, Valsad 396020, Gujarat</div>
-            <div>Phone: 8866995757</div>
-            <div>GSTIN: 24ABCDE1234F1Z5</div>
-          </div>
-          <div class="invoice-meta">
-            <div><strong>Invoice:</strong> ${escapeHtml(inv.invoiceNumber || '')}</div>
-            <div><strong>Date:</strong> ${new Date(inv.date || Date.now()).toLocaleDateString()}</div>
-            <div><strong>Status:</strong> ${inv.status}</div>
-            <div><strong>Client:</strong> ${escapeHtml(inv.clientName || '')}</div>
-          </div>
-        </div>
-
-        <hr>
-
-        <div class="table-responsive">
-          <table class="table invoice-table">
-            <thead><tr><th>Description</th><th class="text-end">Hours</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-
-        <div class="d-flex justify-content-end">
-          <div style="width:320px">
-            <div class="d-flex justify-content-between"><div>Subtotal</div><div>₹${sub.toFixed(2)}</div></div>
-            <div class="d-flex justify-content-between"><div>GST (${gstPercent}%)</div><div>₹${gstAmount.toFixed(2)}</div></div>
-            <hr>
-            <div class="d-flex justify-content-between"><strong>Total</strong><strong>₹${total.toFixed(2)}</strong></div>
-            <div class="gst-notes mt-2">This is a computer-generated invoice. GST applicable as per Indian law.</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  // download PDF (html2canvas -> jsPDF)
-  $('downloadPdfBtn').addEventListener('click', async ()=>{
-    const el = document.getElementById('invoicePaper');
-    if (!el) { alert('Invoice not ready'); return; }
-    try {
-      // use html2canvas to capture
-      const canvas = await html2canvas(el, { scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width, canvas.height] });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      const invNum = editingInvoiceId ? ('invoice-' + editingInvoiceId) : 'invoice';
-      pdf.save(`${invNum}.pdf`);
-    } catch(err) { alert('PDF generation failed: ' + err.message); }
-  });
-
-  // Share via WhatsApp — share a summary text
-  $('waShareBtn').addEventListener('click', async ()=>{
-    if (!editingInvoiceId) return alert('No invoice selected');
-    const doc = await db.collection('invoices').doc(editingInvoiceId).get();
-    if (!doc.exists) return alert('Invoice not found');
-    const inv = doc.data();
-    const text = `Invoice ${inv.invoiceNumber}%0AClient: ${inv.clientName}%0ATotal: ₹${(inv.totalAmount||0).toFixed(2)}%0AThank you.`;
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-  });
-
-  // Share via email (mailto)
-  $('emailShareBtn').addEventListener('click', async ()=>{
-    if (!editingInvoiceId) return alert('No invoice selected');
-    const doc = await db.collection('invoices').doc(editingInvoiceId).get();
-    if (!doc.exists) return alert('Invoice not found');
-    const inv = doc.data();
-    const subject = encodeURIComponent(`Invoice ${inv.invoiceNumber}`);
-    const body = encodeURIComponent(`Hello,\n\nPlease find your invoice ${inv.invoiceNumber} for ₹${(inv.totalAmount||0).toFixed(2)}.\n\nThank you,\nBhavishya Enterprise`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  });
-
-  // print invoice
-  $('printInvoiceBtn').addEventListener('click', ()=>{
-    window.print();
-  });
-
-  /********************************************************************
-   * Invoice actions
-   ********************************************************************/
-  window.markInvoicePaid = async (id) => {
-    if (!confirm('Mark as paid?')) return;
-    try { await db.collection('invoices').doc(id).update({ status: 'paid', paidAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch(err){ alert(err.message); }
-  };
-
-  window.deleteInvoice = async (id) => {
-    if (!confirm('Delete invoice?')) return;
-    try { await db.collection('invoices').doc(id).delete(); } catch(err){ alert(err.message); }
-  };
-
-  /********************************************************************
-   * Users & Cranes
-   ********************************************************************/
-  // Create auth user (admin)
-  $('createAuthUserBtn').addEventListener('click', async ()=>{
-    const email = $('userEmail').value; const name = $('userFullName').value; const role = $('userRole').value;
-    const tempPass = $('userTempPass').value; const adminPass = $('adminReauthPass').value;
-    if (!email || !tempPass || !adminPass) return alert('Fill required fields');
-    if (!confirm('Creating a user will temporarily sign you out. You will be asked to re-sign in as admin. Continue?')) return;
-    const adminEmail = auth.currentUser.email;
-    try {
-      // create user
-      await auth.createUserWithEmailAndPassword(email, tempPass);
-      const newUser = auth.currentUser;
-      // create user doc
-      await db.collection('users').doc(newUser.uid).set({ email, name, role, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-      // sign out new user
-      await auth.signOut();
-      // sign back in as admin (reauthenticate)
-      await auth.signInWithEmailAndPassword(adminEmail, adminPass);
-      alert('User created and admin session restored.');
-      bootstrap.Modal.getInstance($('userModal')).hide();
-    } catch(err) {
-      alert('User creation failed: ' + err.message);
-      try { await auth.signOut(); await auth.signInWithEmailAndPassword(adminEmail, adminPass); } catch(e){ console.error('restore failed', e); }
-    }
-  });
-
-  // remove user doc (doesn't delete auth user)
-  window.removeUser = async (id) => {
-    if (!confirm('Remove user record? This does not delete the Auth account.')) return;
-    try { await db.collection('users').doc(id).delete(); } catch(err){ alert(err.message); }
-  };
-
-  // create crane
-  $('saveCraneBtn').addEventListener('click', async ()=>{
-    const craneNo = $('craneNo').value; const assigned = $('craneAssign').value || null;
-    if (!craneNo) return alert('Enter crane no');
-    try {
-      await db.collection('cranes').add({ craneNo, assignedTo: assigned, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-      bootstrap.Modal.getInstance($('craneModal')).hide();
-      $('craneForm').reset();
-    } catch(err) { alert(err.message); }
-  });
-
-  window.deleteCrane = async (id) => {
-    if (!confirm('Delete crane?')) return;
-    try { await db.collection('cranes').doc(id).delete(); } catch(err){ alert(err.message); }
-  };
-
-  /********************************************************************
-   * Utility & init
-   ********************************************************************/
-  function escapeHtml(str='') {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function nextInvoiceNumber(){ return 'INV-' + (new Date().toISOString().slice(0,10).replace(/-/g,'')) + '-' + Math.floor(Math.random()*90000+10000); }
-
-  /********************************************************************
-   * Initial load helpers (if user is already signed-in)
-   ********************************************************************/
-  // quick client-side init: create default admin if none exists
-  (async function ensureAtLeastOneUser(){
-    const snap = await db.collection('users').limit(1).get();
-    if (snap.empty) {
-      // no users exists: we can't create auth user from server here, but we can inform user
-      console.log('No users found in Firestore; create one by registering an account.');
-    }
-  })();
-
-  // Recaclulate totals live when inputs in invoice items change
-  // already wired with event listener
-
-  </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current date
+            const currentDate = new Date().toLocaleDateString('en-IN');
+            document.getElementById('currentDate').textContent = currentDate;
+            
+            // Login functionality
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                // Simple authentication (in a real app, this would be server-side)
+                if (username === 'BE' && password === 'admin123') {
+                    loginUser('Admin', 'admin');
+                } else if ((username === 'crane1' || username === 'crane2') && password === 'operator123') {
+                    loginUser(username, 'operator');
+                } else {
+                    alert('Invalid username or password');
+                }
+            });
+            
+            // Logout functionality
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                document.getElementById('appScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+            });
+            
+            // Tab switching functionality
+            const tabLinks = document.querySelectorAll('[data-tab]');
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    showTab(tabId);
+                    
+                    // Update active states
+                    tabLinks.forEach(l => {
+                        l.classList.remove('active');
+                        if (l.classList.contains('mobile-nav-item')) {
+                            l.classList.remove('active');
+                        }
+                    });
+                    this.classList.add('active');
+                    
+                    // For mobile nav, also update the corresponding desktop nav
+                    if (this.classList.contains('mobile-nav-item')) {
+                        const desktopLink = document.querySelector(`.sidebar .nav-link[data-tab="${tabId}"]`);
+                        if (desktopLink) {
+                            document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+                            desktopLink.classList.add('active');
+                        }
+                    } else {
+                        // Desktop nav clicked, update mobile nav
+                        const mobileLink = document.querySelector(`.mobile-nav-item[data-tab="${tabId}"]`);
+                        if (mobileLink) {
+                            document.querySelectorAll('.mobile-nav-item').forEach(l => l.classList.remove('active'));
+                            mobileLink.classList.add('active');
+                        }
+                    }
+                });
+            });
+            
+            // Initialize dashboard with sample data
+            initializeDashboard();
+            
+            // Initialize client form
+            document.getElementById('saveClient').addEventListener('click', saveClient);
+            
+            // Initialize worksheet form
+            document.getElementById('saveWorksheet').addEventListener('click', saveWorksheet);
+            
+            // Initialize user form
+            document.getElementById('saveUser').addEventListener('click', saveUser);
+            
+            // Calculate total hours when times change
+            document.getElementById('inTime').addEventListener('change', calculateTotalHours);
+            document.getElementById('outTime').addEventListener('change', calculateTotalHours);
+            document.getElementById('lunchBreak').addEventListener('change', calculateTotalHours);
+            
+            // User management button (for admin)
+            document.getElementById('userManagementBtn').addEventListener('click', function() {
+                showTab('users');
+            });
+        });
+        
+        // Login user function
+        function loginUser(username, role) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            
+            // Update UI based on role
+            document.getElementById('displayUser').textContent = username;
+            document.getElementById('displayUserName').textContent = username;
+            document.getElementById('userRoleBadge').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            
+            // Show/hide elements based on role
+            const adminElements = document.querySelectorAll('.admin-only');
+            const operatorElements = document.querySelectorAll('.operator-only');
+            
+            if (role === 'admin') {
+                adminElements.forEach(el => el.style.display = '');
+                operatorElements.forEach(el => el.style.display = '');
+                document.getElementById('userManagementBtn').style.display = 'block';
+            } else if (role === 'operator') {
+                adminElements.forEach(el => el.style.display = 'none');
+                operatorElements.forEach(el => el.style.display = '');
+                document.getElementById('userManagementBtn').style.display = 'none';
+            }
+            
+            // Initialize data
+            initializeClients();
+            initializeWorksheets();
+            initializeInvoices();
+            initializeUsers();
+        }
+        
+        // Show tab function
+        function showTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(tabId);
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+            }
+        }
+        
+        // Initialize dashboard with sample data
+        function initializeDashboard() {
+            document.getElementById('totalClients').textContent = '12';
+            document.getElementById('activeWorksheets').textContent = '5';
+            document.getElementById('pendingInvoices').textContent = '3';
+            document.getElementById('outstandingAmount').textContent = '₹45,600';
+            
+            // Sample recent worksheets
+            const recentWorksheets = [
+                { date: '2025-03-15', client: 'ABC Industries', crane: 'GJ-15-T-8866', hours: '8.5', status: 'Completed' },
+                { date: '2025-03-14', client: 'XYZ Corporation', crane: 'GJ-15-U-5757', hours: '6.0', status: 'Completed' },
+                { date: '2025-03-13', client: 'PQR Ltd', crane: 'GJ-15-T-8866', hours: '7.5', status: 'In Progress' }
+            ];
+            
+            const worksheetTable = document.getElementById('recentWorksheets');
+            worksheetTable.innerHTML = '';
+            recentWorksheets.forEach(ws => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ws.date}</td>
+                    <td>${ws.client}</td>
+                    <td>${ws.crane}</td>
+                    <td>${ws.hours}</td>
+                    <td><span class="badge ${ws.status === 'Completed' ? 'bg-success' : 'bg-warning'}">${ws.status}</span></td>
+                `;
+                worksheetTable.appendChild(row);
+            });
+            
+            // Sample recent invoices
+            const recentInvoices = [
+                { number: '001-2025-26', client: 'ABC Industries', amount: '₹18,500', date: '2025-03-15', status: 'Paid' },
+                { number: '002-2025-26', client: 'XYZ Corporation', amount: '₹12,000', date: '2025-03-14', status: 'Pending' },
+                { number: '003-2025-26', client: 'PQR Ltd', amount: '₹15,100', date: '2025-03-13', status: 'Pending' }
+            ];
+            
+            const invoiceList = document.getElementById('recentInvoices');
+            invoiceList.innerHTML = '';
+            recentInvoices.forEach(inv => {
+                const item = document.createElement('div');
+                item.className = 'invoice-item';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>${inv.number}</h6>
+                            <p class="mb-1">${inv.client}</p>
+                            <small class="text-muted">${inv.date}</small>
+                        </div>
+                        <div class="text-end">
+                            <h6>${inv.amount}</h6>
+                            <span class="badge ${inv.status === 'Paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span>
+                        </div>
+                    </div>
+                `;
+                invoiceList.appendChild(item);
+            });
+        }
+        
+        // Initialize clients
+        function initializeClients() {
+            // Sample client data
+            const clients = [
+                { name: 'ABC Industries', address: 'Industrial Area, Vapi', state: 'Gujarat', mobile: '9876543210', gst: '24ABCDE1234F1Z5', gstType: 'intra' },
+                { name: 'XYZ Corporation', address: 'GIDC, Valsad', state: 'Gujarat', mobile: '9876543211', gst: '24FGHIJ5678K9L0', gstType: 'intra' },
+                { name: 'PQR Ltd', address: 'MIDC, Mumbai', state: 'Maharashtra', mobile: '9876543212', gst: '27MNOPQ9012R3S4', gstType: 'inter' }
+            ];
+            
+            const clientTable = document.getElementById('clientTable');
+            clientTable.innerHTML = '';
+            clients.forEach(client => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${client.name}</td>
+                    <td>${client.address}</td>
+                    <td>${client.state}</td>
+                    <td>${client.mobile}</td>
+                    <td>${client.gst}</td>
+                    <td>${client.gstType === 'intra' ? 'Intra-State' : 'Inter-State'}</td>
+                    <td class="admin-only">
+                        <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                clientTable.appendChild(row);
+            });
+            
+            // Populate client dropdowns
+            const clientDropdowns = document.querySelectorAll('#worksheetClient, #invoiceClient, #statementClient');
+            clientDropdowns.forEach(dropdown => {
+                dropdown.innerHTML = '<option value="">Select Client</option>';
+                clients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.name;
+                    option.textContent = client.name;
+                    dropdown.appendChild(option);
+                });
+            });
+        }
+        
+        // Initialize worksheets
+        function initializeWorksheets() {
+            // Sample worksheet data
+            const worksheets = [
+                { date: '2025-03-15', client: 'ABC Industries', crane: 'GJ-15-T-8866', inTime: '08:00', outTime: '17:00', lunch: '30', totalHours: '8.5', workDetails: 'Loading and unloading machinery' },
+                { date: '2025-03-14', client: 'XYZ Corporation', crane: 'GJ-15-U-5757', inTime: '09:00', outTime: '16:00', lunch: '30', totalHours: '6.5', workDetails: 'Construction material handling' },
+                { date: '2025-03-13', client: 'PQR Ltd', crane: 'GJ-15-T-8866', inTime: '10:00', outTime: '18:30', lunch: '45', totalHours: '7.75', workDetails: 'Equipment installation' }
+            ];
+            
+            const worksheetTable = document.getElementById('worksheetTable');
+            worksheetTable.innerHTML = '';
+            worksheets.forEach(ws => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ws.date}</td>
+                    <td>${ws.client}</td>
+                    <td>${ws.crane}</td>
+                    <td>${ws.inTime}</td>
+                    <td>${ws.outTime}</td>
+                    <td>${ws.totalHours}</td>
+                    <td>${ws.workDetails}</td>
+                    <td class="admin-only">
+                        <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                worksheetTable.appendChild(row);
+            });
+        }
+        
+        // Initialize invoices
+        function initializeInvoices() {
+            // Sample invoice history
+            const invoices = [
+                { number: '001-2025-26', client: 'ABC Industries', date: '2025-03-15', amount: '₹18,500', status: 'Paid' },
+                { number: '002-2025-26', client: 'XYZ Corporation', date: '2025-03-14', amount: '₹12,000', status: 'Pending' },
+                { number: '003-2025-26', client: 'PQR Ltd', date: '2025-03-13', amount: '₹15,100', status: 'Pending' }
+            ];
+            
+            const invoiceHistory = document.getElementById('invoiceHistory');
+            invoiceHistory.innerHTML = '';
+            invoices.forEach(inv => {
+                const item = document.createElement('div');
+                item.className = 'invoice-item';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>${inv.number}</h6>
+                            <p class="mb-1">${inv.client}</p>
+                            <small class="text-muted">${inv.date}</small>
+                        </div>
+                        <div class="text-end">
+                            <h6>${inv.amount}</h6>
+                            <span class="badge ${inv.status === 'Paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span>
+                        </div>
+                    </div>
+                `;
+                invoiceHistory.appendChild(item);
+            });
+        }
+        
+        // Initialize users
+        function initializeUsers() {
+            // Sample user data
+            const users = [
+                { username: 'BE', fullName: 'Admin User', role: 'Admin', created: '2025-01-01', status: 'Active' },
+                { username: 'crane1', fullName: 'Operator 1', role: 'Crane Operator', created: '2025-01-15', status: 'Active' },
+                { username: 'crane2', fullName: 'Operator 2', role: 'Crane Operator', created: '2025-02-01', status: 'Active' }
+            ];
+            
+            const userTable = document.getElementById('userTable');
+            userTable.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.fullName}</td>
+                    <td>${user.role}</td>
+                    <td>${user.created}</td>
+                    <td><span class="badge bg-success">${user.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                userTable.appendChild(row);
+            });
+        }
+        
+        // Save client function
+        function saveClient() {
+            const name = document.getElementById('clientName').value;
+            const address = document.getElementById('clientAddress').value;
+            const state = document.getElementById('clientState').value;
+            const mobile = document.getElementById('clientMobile').value;
+            const gst = document.getElementById('clientGST').value;
+            const gstType = document.querySelector('input[name="gstType"]:checked').value;
+            
+            // Validate required fields
+            if (!name || !address || !state || !mobile) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // In a real application, you would save to a database
+            // For this demo, we'll just show a success message
+            alert('Client saved successfully!');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('clientModal'));
+            modal.hide();
+            
+            // Reset the form
+            document.getElementById('clientForm').reset();
+            
+            // Refresh client list
+            initializeClients();
+        }
+        
+        // Save worksheet function
+        function saveWorksheet() {
+            const client = document.getElementById('worksheetClient').value;
+            const date = document.getElementById('worksheetDate').value;
+            const crane = document.getElementById('craneNumber').value;
+            const inTime = document.getElementById('inTime').value;
+            const outTime = document.getElementById('outTime').value;
+            const lunch = document.getElementById('lunchBreak').value;
+            const workDetails = document.getElementById('workDetails').value;
+            const rateType = document.getElementById('rateType').value;
+            const rateAmount = document.getElementById('rateAmount').value;
+            
+            // Validate required fields
+            if (!client || !date || !crane || !inTime || !outTime || !workDetails || !rateType || !rateAmount) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // In a real application, you would save to a database
+            // For this demo, we'll just show a success message
+            alert('Worksheet saved successfully!');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('worksheetModal'));
+            modal.hide();
+            
+            // Reset the form
+            document.getElementById('worksheetForm').reset();
+            
+            // Refresh worksheet list
+            initializeWorksheets();
+        }
+        
+        // Save user function
+        function saveUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const fullName = document.getElementById('fullName').value;
+            const role = document.getElementById('userRole').value;
+            
+            // Validate required fields
+            if (!username || !password || !confirmPassword || !fullName || !role) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Check if passwords match
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            // In a real application, you would save to a database
+            // For this demo, we'll just show a success message
+            alert('User saved successfully!');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+            modal.hide();
+            
+            // Reset the form
+            document.getElementById('userForm').reset();
+            
+            // Refresh user list
+            initializeUsers();
+        }
+        
+        // Calculate total hours function
+        function calculateTotalHours() {
+            const inTime = document.getElementById('inTime').value;
+            const outTime = document.getElementById('outTime').value;
+            const lunchBreak = parseInt(document.getElementById('lunchBreak').value) || 0;
+            
+            if (inTime && outTime) {
+                const inTimeParts = inTime.split(':');
+                const outTimeParts = outTime.split(':');
+                
+                const inMinutes = parseInt(inTimeParts[0]) * 60 + parseInt(inTimeParts[1]);
+                const outMinutes = parseInt(outTimeParts[0]) * 60 + parseInt(outTimeParts[1]);
+                
+                let totalMinutes = outMinutes - inMinutes - lunchBreak;
+                
+                // Handle overnight work (if out time is earlier than in time)
+                if (totalMinutes < 0) {
+                    totalMinutes += 24 * 60;
+                }
+                
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                document.getElementById('totalHours').value = `${hours}.${minutes}`;
+            }
+        }
+    </script>
 </body>
 </html>
