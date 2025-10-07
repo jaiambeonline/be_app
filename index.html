@@ -366,6 +366,12 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="app-background">
@@ -493,7 +499,6 @@
 
                     <!-- Dashboard Tab -->
                     <div id="dashboard" class="tab-content">
-                        <!-- Dashboard content remains the same -->
                         <div class="row">
                             <div class="col-md-3 col-6">
                                 <div class="card text-white bg-primary mb-3">
@@ -600,7 +605,6 @@
 
                     <!-- Clients Tab -->
                     <div id="clients" class="tab-content hidden">
-                        <!-- Clients content remains the same -->
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Client Management</h5>
@@ -633,7 +637,6 @@
 
                     <!-- Worksheets Tab -->
                     <div id="worksheets" class="tab-content hidden">
-                        <!-- Worksheets content remains the same -->
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Worksheet Management</h5>
@@ -756,8 +759,228 @@
                         </div>
                     </div>
 
-                    <!-- Other tabs remain the same -->
-                    <!-- Client Statements, Reports, User Management, Company Info tabs... -->
+                    <!-- Client Statements Tab -->
+                    <div id="statements" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Client Statements</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="statementClient" class="form-label">Select Client</label>
+                                        <select class="form-select" id="statementClient">
+                                            <option value="">Select Client</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="statementFromDate" class="form-label">From Date</label>
+                                        <input type="date" class="form-control" id="statementFromDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="statementToDate" class="form-label">To Date</label>
+                                        <input type="date" class="form-control" id="statementToDate">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="generateStatement">
+                                    <i class="fas fa-file-pdf"></i> Generate Statement
+                                </button>
+                                
+                                <div class="mt-4 client-statement" id="clientStatementContent">
+                                    <!-- Client statement will be displayed here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Tab -->
+                    <div id="reports" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Business Reports</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-md-4">
+                                        <div class="card text-white bg-info">
+                                            <div class="card-body">
+                                                <h5>Monthly Revenue</h5>
+                                                <h2 id="monthlyRevenue">₹0</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card text-white bg-success">
+                                            <div class="card-body">
+                                                <h5>Total Worksheets</h5>
+                                                <h2 id="totalWorksheets">0</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card text-white bg-warning">
+                                            <div class="card-body">
+                                                <h5>Active Clients</h5>
+                                                <h2 id="activeClients">0</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Revenue Chart</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="chart-container">
+                                                    <canvas id="revenueChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Client Distribution</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="chart-container">
+                                                    <canvas id="clientChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Recent Transactions</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Date</th>
+                                                                <th>Client</th>
+                                                                <th>Type</th>
+                                                                <th>Amount</th>
+                                                                <th>Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="recentTransactions">
+                                                            <!-- Recent transactions will be populated here -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Management Tab -->
+                    <div id="users" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">User Management</h5>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+                                    <i class="fas fa-plus"></i> Add New User
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Full Name</th>
+                                                <th>Role</th>
+                                                <th>Created Date</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="userTable">
+                                            <!-- User data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Info Tab -->
+                    <div id="company" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Company Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>Company Name</strong></label>
+                                            <p>Bhavishya Enterprise</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>Business Type</strong></label>
+                                            <p>Crane Service, Loading & Unloading, Workshop</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>Address</strong></label>
+                                            <p>5 T M Park, Mukund Parnera, Valsad 396020, Gujarat</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>Contact Number</strong></label>
+                                            <p>8866995757</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>Email Address</strong></label>
+                                            <p>bhavishyaenterprisevalsad@gmail.com</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>GSTIN</strong></label>
+                                            <p>24ABCDE1234F1Z5</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>Bank Details</strong></label>
+                                            <p>Bank Name: State Bank of India<br>
+                                               Account Number: 12345678901<br>
+                                               IFSC Code: SBIN0000123<br>
+                                               Branch: Valsad</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Terms & Conditions</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <ol>
+                                                    <li>All services are subject to availability of equipment and manpower.</li>
+                                                    <li>Payment terms: 50% advance, 50% on completion of work.</li>
+                                                    <li>GST @18% will be applicable as per government regulations.</li>
+                                                    <li>Any delay in payment will attract interest @18% per annum.</li>
+                                                    <li>All disputes subject to Valsad jurisdiction only.</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -788,8 +1011,7 @@
         </div>
     </div>
 
-    <!-- Modals remain the same -->
-    <!-- Client Modal, Worksheet Modal, User Modal, Invoice Preview Modal, Worksheet Preview Modal -->
+    <!-- Modals -->
     <div class="modal fade" id="clientModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -949,8 +1171,8 @@
                 <div class="modal-body">
                     <form id="userForm">
                         <div class="mb-3">
-                            <label for="newUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="newUsername" required>
+                            <label for="newUsername" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="newUsername" required>
                         </div>
                         <div class="mb-3">
                             <label for="newPassword" class="form-label">Password</label>
@@ -1050,12 +1272,20 @@
         let invoices = [];
         let users = [];
         let invoiceItems = [];
+        let revenueChart = null;
+        let clientChart = null;
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             // Set current date
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-IN');
             document.getElementById('workDate').valueAsDate = new Date();
+            
+            // Set default dates for statement
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            document.getElementById('statementFromDate').valueAsDate = firstDay;
+            document.getElementById('statementToDate').valueAsDate = today;
             
             // Check if user is already logged in
             auth.onAuthStateChanged((user) => {
@@ -1128,7 +1358,19 @@
                     document.querySelectorAll('.mobile-nav-item').forEach(nav => nav.classList.remove('active'));
                     
                     this.classList.add('active');
+                    
+                    // Load specific tab data
+                    if (tabName === 'reports') {
+                        loadReportsData();
+                    } else if (tabName === 'statements') {
+                        loadStatementClients();
+                    }
                 });
+            });
+            
+            // Generate statement handler
+            document.getElementById('generateStatement').addEventListener('click', function() {
+                generateClientStatement();
             });
             
             // Client form handler
@@ -1440,6 +1682,7 @@
             loadWorksheets();
             loadInvoices();
             loadUsers();
+            loadStatementClients();
         }
         
         // Show tab function
@@ -1793,6 +2036,294 @@
                     </tr>
                 `).join('');
             });
+        }
+        
+        // Load statement clients
+        function loadStatementClients() {
+            const statementClientSelect = document.getElementById('statementClient');
+            statementClientSelect.innerHTML = '<option value="">Select Client</option>' + 
+                clients.map(client => `<option value="${client.id}">${client.name}</option>`).join('');
+        }
+        
+        // Load reports data
+        function loadReportsData() {
+            // Calculate monthly revenue
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            let monthlyRevenue = 0;
+            let totalWorksheets = worksheets.length;
+            let activeClients = clients.length;
+            
+            invoices.forEach(invoice => {
+                const invoiceDate = new Date(invoice.date);
+                if (invoiceDate.getMonth() === currentMonth && invoiceDate.getFullYear() === currentYear) {
+                    monthlyRevenue += invoice.totalAmount;
+                }
+            });
+            
+            document.getElementById('monthlyRevenue').textContent = '₹' + monthlyRevenue.toFixed(2);
+            document.getElementById('totalWorksheets').textContent = totalWorksheets;
+            document.getElementById('activeClients').textContent = activeClients;
+            
+            // Create charts
+            createRevenueChart();
+            createClientChart();
+            loadRecentTransactions();
+        }
+        
+        // Create revenue chart
+        function createRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            
+            // Sample data - in real app, you would calculate this from invoices
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const revenueData = [50000, 75000, 60000, 90000, 80000, 95000];
+            
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Monthly Revenue (₹)',
+                        data: revenueData,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create client chart
+        function createClientChart() {
+            const ctx = document.getElementById('clientChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (clientChart) {
+                clientChart.destroy();
+            }
+            
+            // Sample data - in real app, you would calculate this from worksheets
+            const clientNames = clients.slice(0, 5).map(client => client.name);
+            const worksheetCounts = [12, 8, 15, 6, 10];
+            
+            clientChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: clientNames,
+                    datasets: [{
+                        label: 'Worksheets Completed',
+                        data: worksheetCounts,
+                        backgroundColor: [
+                            '#2ecc71',
+                            '#3498db',
+                            '#9b59b6',
+                            '#e74c3c',
+                            '#f39c12'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Load recent transactions
+        function loadRecentTransactions() {
+            const recentTransactions = document.getElementById('recentTransactions');
+            
+            // Combine recent invoices and worksheets for transactions
+            const transactions = [];
+            
+            invoices.slice(0, 10).forEach(inv => {
+                transactions.push({
+                    date: inv.date,
+                    client: inv.clientName,
+                    type: 'Invoice',
+                    amount: inv.totalAmount,
+                    status: inv.status
+                });
+            });
+            
+            worksheets.slice(0, 10).forEach(ws => {
+                transactions.push({
+                    date: ws.date,
+                    client: ws.clientName,
+                    type: 'Worksheet',
+                    amount: parseFloat(ws.totalHours) * parseFloat(ws.rateAmount),
+                    status: 'Completed'
+                });
+            });
+            
+            // Sort by date and take top 10
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const recentTransactionsHtml = transactions.slice(0, 10).map(trans => `
+                <tr>
+                    <td>${new Date(trans.date).toLocaleDateString('en-IN')}</td>
+                    <td>${trans.client}</td>
+                    <td>${trans.type}</td>
+                    <td>₹${trans.amount.toFixed(2)}</td>
+                    <td><span class="badge ${trans.status === 'paid' || trans.status === 'Completed' ? 'bg-success' : 'bg-warning'}">${trans.status}</span></td>
+                </tr>
+            `).join('');
+            
+            recentTransactions.innerHTML = recentTransactionsHtml;
+        }
+        
+        // Generate client statement
+        function generateClientStatement() {
+            const clientId = document.getElementById('statementClient').value;
+            const fromDate = document.getElementById('statementFromDate').value;
+            const toDate = document.getElementById('statementToDate').value;
+            
+            if (!clientId) {
+                alert('Please select a client');
+                return;
+            }
+            
+            const client = clients.find(c => c.id === clientId);
+            if (!client) {
+                alert('Client not found');
+                return;
+            }
+            
+            // Filter worksheets and invoices for the selected client and date range
+            const clientWorksheets = worksheets.filter(ws => 
+                ws.clientId === clientId && 
+                new Date(ws.date) >= new Date(fromDate) && 
+                new Date(ws.date) <= new Date(toDate)
+            );
+            
+            const clientInvoices = invoices.filter(inv => 
+                inv.clientId === clientId && 
+                new Date(inv.date) >= new Date(fromDate) && 
+                new Date(inv.date) <= new Date(toDate)
+            );
+            
+            let totalAmount = 0;
+            let paidAmount = 0;
+            let pendingAmount = 0;
+            
+            clientInvoices.forEach(inv => {
+                totalAmount += inv.totalAmount;
+                if (inv.status === 'paid') {
+                    paidAmount += inv.totalAmount;
+                } else {
+                    pendingAmount += inv.totalAmount;
+                }
+            });
+            
+            const statementContent = document.getElementById('clientStatementContent');
+            statementContent.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Client Statement: ${client.name}</h5>
+                        <p class="mb-0">Period: ${new Date(fromDate).toLocaleDateString('en-IN')} to ${new Date(toDate).toLocaleDateString('en-IN')}</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6>Total Amount</h6>
+                                        <h3>₹${totalAmount.toFixed(2)}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <h6>Paid Amount</h6>
+                                        <h3>₹${paidAmount.toFixed(2)}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-warning">
+                                    <div class="card-body text-center">
+                                        <h6>Pending Amount</h6>
+                                        <h3>₹${pendingAmount.toFixed(2)}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h6>Invoices</h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice No</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${clientInvoices.map(inv => `
+                                        <tr>
+                                            <td>${inv.invoiceNumber}</td>
+                                            <td>${new Date(inv.date).toLocaleDateString('en-IN')}</td>
+                                            <td>₹${inv.totalAmount.toFixed(2)}</td>
+                                            <td><span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <h6 class="mt-4">Worksheets</h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Crane No</th>
+                                        <th>Work Details</th>
+                                        <th>Hours</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${clientWorksheets.map(ws => `
+                                        <tr>
+                                            <td>${new Date(ws.date).toLocaleDateString('en-IN')}</td>
+                                            <td>${ws.craneNumber}</td>
+                                            <td>${ws.workDetails}</td>
+                                            <td>${ws.totalHours}</td>
+                                            <td>₹${(parseFloat(ws.totalHours) * parseFloat(ws.rateAmount)).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
         
         // Delete client from Firebase
