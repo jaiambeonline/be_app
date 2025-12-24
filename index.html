@@ -372,13 +372,6 @@
             height: 300px;
             width: 100%;
         }
-        
-        .login-error {
-            color: #e74c3c;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            display: none;
-        }
     </style>
 </head>
 <body class="app-background">
@@ -393,13 +386,11 @@
             <form id="loginForm">
                 <div class="mb-3">
                     <label for="username" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="username" required placeholder="Enter your email">
-                    <div class="login-error" id="emailError">Please enter a valid email</div>
+                    <input type="email" class="form-control" id="username" required>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" required placeholder="Enter your password">
-                    <div class="login-error" id="passwordError">Please enter your password</div>
+                    <input type="password" class="form-control" id="password" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
                     <span id="loginBtnText">Login</span>
@@ -409,11 +400,6 @@
             <div class="mt-3 text-center">
                 <p class="mb-1"><strong>Login with your registered email</strong></p>
                 <p class="mb-0">Contact admin to create your account</p>
-            </div>
-            <div class="mt-3 text-center">
-                <button class="btn btn-sm btn-outline-primary" onclick="createTestUser()">
-                    Create Test Admin Account
-                </button>
             </div>
         </div>
     </div>
@@ -1275,14 +1261,7 @@
         };
 
         // Initialize Firebase
-        let app;
-        try {
-            app = firebase.initializeApp(firebaseConfig);
-        } catch (error) {
-            // If already initialized, get the existing app
-            app = firebase.app();
-        }
-        
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -1298,8 +1277,6 @@
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing app...');
-            
             // Set current date
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-IN');
             document.getElementById('workDate').valueAsDate = new Date();
@@ -1312,102 +1289,48 @@
             
             // Check if user is already logged in
             auth.onAuthStateChanged((user) => {
-                console.log('Auth state changed:', user ? 'User logged in' : 'No user');
                 if (user) {
                     // User is signed in
-                    console.log('User UID:', user.uid);
-                    console.log('User email:', user.email);
                     loadUserData(user.uid);
                 } else {
                     // User is signed out
-                    console.log('User signed out, showing login screen');
                     document.getElementById('appScreen').classList.add('hidden');
                     document.getElementById('loginScreen').classList.remove('hidden');
                 }
             });
             
             // Login form handler
-            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                console.log('Login form submitted');
-                
-                const email = document.getElementById('username').value.trim();
+                const email = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
-                
-                // Clear previous errors
-                document.getElementById('emailError').style.display = 'none';
-                document.getElementById('passwordError').style.display = 'none';
-                
-                // Validate inputs
-                let isValid = true;
-                if (!email) {
-                    document.getElementById('emailError').style.display = 'block';
-                    isValid = false;
-                }
-                if (!password) {
-                    document.getElementById('passwordError').style.display = 'block';
-                    isValid = false;
-                }
-                if (!isValid) return;
                 
                 // Show loading state
                 document.getElementById('loginBtnText').classList.add('hidden');
                 document.getElementById('loginLoading').classList.remove('hidden');
                 
-                try {
-                    console.log('Attempting login with email:', email);
-                    // Firebase Authentication
-                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                    console.log('Login successful, user:', userCredential.user);
-                    
-                    // Signed in 
-                    const user = userCredential.user;
-                    console.log('Loading user data for UID:', user.uid);
-                    await loadUserData(user.uid);
-                    
-                } catch (error) {
-                    console.error('Login error:', error);
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    
-                    let userMessage = 'Login failed: ';
-                    switch(errorCode) {
-                        case 'auth/invalid-email':
-                            userMessage += 'Invalid email address';
-                            document.getElementById('emailError').textContent = 'Invalid email address';
-                            document.getElementById('emailError').style.display = 'block';
-                            break;
-                        case 'auth/user-disabled':
-                            userMessage += 'This account has been disabled';
-                            break;
-                        case 'auth/user-not-found':
-                            userMessage += 'No account found with this email';
-                            document.getElementById('emailError').textContent = 'No account found with this email';
-                            document.getElementById('emailError').style.display = 'block';
-                            break;
-                        case 'auth/wrong-password':
-                            userMessage += 'Incorrect password';
-                            document.getElementById('passwordError').textContent = 'Incorrect password';
-                            document.getElementById('passwordError').style.display = 'block';
-                            break;
-                        default:
-                            userMessage += errorMessage;
-                    }
-                    
-                    alert(userMessage);
-                    
-                    // Reset loading state
-                    document.getElementById('loginBtnText').classList.remove('hidden');
-                    document.getElementById('loginLoading').classList.add('hidden');
-                }
+                // Firebase Authentication
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Signed in 
+                        const user = userCredential.user;
+                        loadUserData(user.uid);
+                    })
+                    .catch((error) => {
+                        const errorCode = error.code;
+                        const errorMessage = error.message;
+                        alert('Login failed: ' + errorMessage);
+                        
+                        // Reset loading state
+                        document.getElementById('loginBtnText').classList.remove('hidden');
+                        document.getElementById('loginLoading').classList.add('hidden');
+                    });
             });
             
             // Logout handler
             document.getElementById('logoutBtn').addEventListener('click', function() {
-                console.log('Logout clicked');
                 auth.signOut().then(() => {
                     // Sign-out successful
-                    console.log('Sign-out successful');
                     currentUser = null;
                     document.getElementById('appScreen').classList.add('hidden');
                     document.getElementById('loginScreen').classList.remove('hidden');
@@ -1682,59 +1605,52 @@
             
             // Set default date for worksheet
             document.getElementById('workDate').valueAsDate = new Date();
-            
-            console.log('App initialization complete');
         });
 
         // Load user data from Firestore after authentication
-        async function loadUserData(userId) {
-            console.log('Loading user data for UID:', userId);
-            try {
-                const doc = await db.collection('users').doc(userId).get();
-                
-                if (doc.exists) {
-                    const userData = doc.data();
-                    console.log('User data found:', userData);
-                    loginUser({
-                        uid: userId,
-                        username: userData.username,
-                        fullName: userData.fullName,
-                        role: userData.role,
-                        email: userData.email
-                    });
-                } else {
-                    console.log('No user document found, creating new one');
-                    // Create a new user document if it doesn't exist
-                    const user = auth.currentUser;
-                    const newUser = {
-                        username: user.email.split('@')[0],
-                        fullName: user.email.split('@')[0],
-                        role: 'operator', // Default role
-                        email: user.email,
-                        created: new Date().toISOString(),
-                        active: true
-                    };
-                    
-                    await db.collection('users').doc(userId).set(newUser);
-                    console.log('New user document created');
-                    
-                    loginUser({
-                        uid: userId,
-                        username: newUser.username,
-                        fullName: newUser.fullName,
-                        role: newUser.role,
-                        email: newUser.email
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                alert('Error loading user data. Please try again.');
-            }
+        function loadUserData(userId) {
+            db.collection('users').doc(userId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        loginUser({
+                            uid: userId,
+                            username: userData.username,
+                            fullName: userData.fullName,
+                            role: userData.role,
+                            email: userData.email
+                        });
+                    } else {
+                        // Create a new user document if it doesn't exist
+                        const newUser = {
+                            username: auth.currentUser.email.split('@')[0],
+                            fullName: auth.currentUser.email.split('@')[0],
+                            role: 'operator', // Default role
+                            email: auth.currentUser.email,
+                            created: new Date().toISOString(),
+                            active: true
+                        };
+                        
+                        db.collection('users').doc(userId).set(newUser)
+                            .then(() => {
+                                loginUser({
+                                    uid: userId,
+                                    username: newUser.username,
+                                    fullName: newUser.fullName,
+                                    role: newUser.role,
+                                    email: newUser.email
+                                });
+                            });
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error loading user data:', error);
+                    alert('Error loading user data. Please try again.');
+                });
         }
         
         // Login user function
         function loginUser(user) {
-            console.log('Logging in user:', user);
             currentUser = user;
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
@@ -1767,60 +1683,6 @@
             loadInvoices();
             loadUsers();
             loadStatementClients();
-            
-            console.log('User login complete');
-        }
-        
-        // Create test user function (for development)
-        function createTestUser() {
-            const email = prompt("Enter email for test user:");
-            const password = prompt("Enter password for test user:");
-            const fullName = prompt("Enter full name for test user:");
-            const role = prompt("Enter role (admin/operator):");
-            
-            if (!email || !password || !fullName || !role) {
-                alert('All fields are required');
-                return;
-            }
-            
-            if (role !== 'admin' && role !== 'operator') {
-                alert('Role must be either "admin" or "operator"');
-                return;
-            }
-            
-            // Show loading
-            document.getElementById('loginBtnText').classList.add('hidden');
-            document.getElementById('loginLoading').classList.remove('hidden');
-            
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    const userData = {
-                        username: email.split('@')[0],
-                        fullName: fullName,
-                        role: role,
-                        email: email,
-                        created: new Date().toISOString(),
-                        active: true
-                    };
-                    
-                    return db.collection('users').doc(user.uid).set(userData);
-                })
-                .then(() => {
-                    alert('Test user created successfully!\n\nEmail: ' + email + '\nPassword: ' + password + '\nRole: ' + role + '\n\nYou can now login with these credentials.');
-                    
-                    // Reset loading state
-                    document.getElementById('loginBtnText').classList.remove('hidden');
-                    document.getElementById('loginLoading').classList.add('hidden');
-                })
-                .catch((error) => {
-                    console.error('Error creating test user:', error);
-                    alert('Error creating test user: ' + error.message);
-                    
-                    // Reset loading state
-                    document.getElementById('loginBtnText').classList.remove('hidden');
-                    document.getElementById('loginLoading').classList.add('hidden');
-                });
         }
         
         // Show tab function
@@ -1966,7 +1828,6 @@
         
         // Load dashboard data from Firebase
         function loadDashboardData() {
-            console.log('Loading dashboard data...');
             // Load clients count
             db.collection('clients').get().then(snapshot => {
                 document.getElementById('totalClients').textContent = snapshot.size;
@@ -2031,13 +1892,11 @@
         
         // Load clients from Firebase
         function loadClients() {
-            console.log('Loading clients...');
             db.collection('clients').get().then(snapshot => {
                 clients = [];
                 snapshot.forEach(doc => {
                     clients.push({ id: doc.id, ...doc.data() });
                 });
-                console.log('Clients loaded:', clients.length);
                 
                 const clientTable = document.getElementById('clientTable');
                 const clientSelects = document.querySelectorAll('select[id$="Client"]');
@@ -2064,20 +1923,16 @@
                     select.innerHTML = '<option value="">Select Client</option>' + 
                         clients.map(client => `<option value="${client.id}">${client.name}</option>`).join('');
                 });
-            }).catch(error => {
-                console.error('Error loading clients:', error);
             });
         }
         
         // Load worksheets from Firebase
         function loadWorksheets() {
-            console.log('Loading worksheets...');
             db.collection('worksheets').get().then(snapshot => {
                 worksheets = [];
                 snapshot.forEach(doc => {
                     worksheets.push({ id: doc.id, ...doc.data() });
                 });
-                console.log('Worksheets loaded:', worksheets.length);
                 
                 const worksheetTable = document.getElementById('worksheetTable');
                 
@@ -2110,20 +1965,16 @@
                         </td>
                     </tr>
                 `).join('');
-            }).catch(error => {
-                console.error('Error loading worksheets:', error);
             });
         }
         
         // Load invoices from Firebase
         function loadInvoices() {
-            console.log('Loading invoices...');
             db.collection('invoices').get().then(snapshot => {
                 invoices = [];
                 snapshot.forEach(doc => {
                     invoices.push({ id: doc.id, ...doc.data() });
                 });
-                console.log('Invoices loaded:', invoices.length);
                 
                 const invoiceHistory = document.getElementById('invoiceHistory');
                 
@@ -2154,20 +2005,16 @@
                         </div>
                     </div>
                 `).join('');
-            }).catch(error => {
-                console.error('Error loading invoices:', error);
             });
         }
         
         // Load users from Firebase
         function loadUsers() {
-            console.log('Loading users...');
             db.collection('users').get().then(snapshot => {
                 users = [];
                 snapshot.forEach(doc => {
                     users.push({ id: doc.id, ...doc.data() });
                 });
-                console.log('Users loaded:', users.length);
                 
                 const userTable = document.getElementById('userTable');
                 
@@ -2188,8 +2035,6 @@
                         </td>
                     </tr>
                 `).join('');
-            }).catch(error => {
-                console.error('Error loading users:', error);
             });
         }
         
@@ -2202,7 +2047,6 @@
         
         // Load reports data
         function loadReportsData() {
-            console.log('Loading reports data...');
             // Calculate monthly revenue
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
@@ -3053,6 +2897,33 @@
             }
             
             return words + ' Rupees Only';
+        }
+
+        // Function to create the first admin user (run this once in browser console)
+        function createAdminUser() {
+            const email = "admin@bhavishya.com";
+            const password = "admin123";
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    return db.collection('users').doc(user.uid).set({
+                        username: 'admin',
+                        fullName: 'Admin User',
+                        role: 'admin',
+                        email: email,
+                        created: new Date().toISOString(),
+                        active: true
+                    });
+                })
+                .then(() => {
+                    console.log('Admin user created successfully');
+                    alert('Admin user created successfully! You can now login with email: admin@bhavishya.com and password: admin123');
+                })
+                .catch((error) => {
+                    console.error('Error creating admin user:', error);
+                    alert('Error creating admin user: ' + error.message);
+                });
         }
     </script>
 </body>
