@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhavishya Enterprise - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        
+        .sidebar {
+            background: var(--primary);
+            color: white;
+            min-height: 100vh;
+            position: fixed;
+            width: 250px;
+            padding-top: 20px;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 3px solid var(--secondary);
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .stat-card {
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card.blue { background: linear-gradient(45deg, #3498db, #2980b9); }
+        .stat-card.green { background: linear-gradient(45deg, #2ecc71, #27ae60); }
+        .stat-card.orange { background: linear-gradient(45deg, #e67e22, #d35400); }
+        .stat-card.red { background: linear-gradient(45deg, #e74c3c, #c0392b); }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="d-flex align-items-center px-3 mb-4">
+            <div class="logo me-3">BE</div>
+            <div>
+                <h5 class="mb-0">Bhavishya Enterprise</h5>
+                <small>Crane Services</small>
+            </div>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showSection('clients')">
+                    <i class="fas fa-users me-2"></i> Clients
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showSection('worksheets')">
+                    <i class="fas fa-clipboard-list me-2"></i> Worksheets
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showSection('invoices')">
+                    <i class="fas fa-file-invoice-dollar me-2"></i> Invoices
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showSection('reports')">
+                    <i class="fas fa-chart-bar me-2"></i> Reports
+                </a>
+            </li>
+            <li class="nav-item mt-5">
+                <a class="nav-link text-warning" href="index.html">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3>Dashboard</h3>
+                <p class="text-muted mb-0" id="welcomeMessage">Welcome back!</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="me-3">
+                    <i class="fas fa-user-circle text-primary"></i>
+                    <span id="userName">User</span>
+                    <span class="badge bg-primary ms-2" id="userRole">Role</span>
+                </span>
+                <span id="currentDate" class="text-muted"></span>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <div class="stat-card blue">
+                    <h5>Total Clients</h5>
+                    <h2 id="totalClients">0</h2>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card green">
+                    <h5>Worksheets</h5>
+                    <h2 id="totalWorksheets">0</h2>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card orange">
+                    <h5>Invoices</h5>
+                    <h2 id="totalInvoices">0</h2>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card red">
+                    <h5>Revenue</h5>
+                    <h2 id="totalRevenue">₹0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title" id="sectionTitle">Application Overview</h5>
+                <div id="contentArea">
+                    <!-- Default content -->
+                    <p>Welcome to Bhavishya Enterprise Management System!</p>
+                    <p>This is a working version that saves data in your browser's local storage.</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6>Quick Actions:</h6>
+                            <div class="list-group">
+                                <button class="list-group-item list-group-item-action" onclick="showSection('clients')">
+                                    <i class="fas fa-plus-circle text-primary me-2"></i> Add New Client
+                                </button>
+                                <button class="list-group-item list-group-item-action" onclick="showSection('worksheets')">
+                                    <i class="fas fa-plus-circle text-success me-2"></i> Create Worksheet
+                                </button>
+                                <button class="list-group-item list-group-item-action" onclick="showSection('invoices')">
+                                    <i class="fas fa-plus-circle text-warning me-2"></i> Generate Invoice
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Recent Activity:</h6>
+                            <div id="recentActivity">
+                                <p>No recent activity yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        const userData = sessionStorage.getItem('user');
+        if (!userData) {
+            // Redirect to login if not logged in
+            window.location.href = 'index.html';
+        }
+        
+        const user = JSON.parse(userData);
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set user info
+            document.getElementById('userName').textContent = user.fullName;
+            document.getElementById('userRole').textContent = user.role === 'admin' ? 'Admin' : 'Operator';
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${user.fullName}!`;
+            
+            // Set current date
+            const now = new Date();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // Load dashboard data
+            loadDashboard();
+        });
+        
+        function loadDashboard() {
+            // Load from local storage
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            
+            // Update stats
+            document.getElementById('totalClients').textContent = clients.length;
+            document.getElementById('totalWorksheets').textContent = worksheets.length;
+            document.getElementById('totalInvoices').textContent = invoices.length;
+            
+            // Calculate total revenue
+            let totalRevenue = 0;
+            invoices.forEach(inv => {
+                totalRevenue += parseFloat(inv.totalAmount || 0);
+            });
+            document.getElementById('totalRevenue').textContent = '₹' + totalRevenue.toFixed(2);
+            
+            // Update recent activity
+            updateRecentActivity();
+        }
+        
+        function updateRecentActivity() {
+            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            
+            let html = '';
+            
+            // Add recent worksheets (last 3)
+            worksheets.slice(-3).reverse().forEach(ws => {
+                html += `<div class="mb-2">
+                    <i class="fas fa-clipboard-check text-success me-2"></i>
+                    Worksheet for ${ws.clientName} (${ws.date})
+                </div>`;
+            });
+            
+            // Add recent invoices (last 3)
+            invoices.slice(-3).reverse().forEach(inv => {
+                html += `<div class="mb-2">
+                    <i class="fas fa-file-invoice text-warning me-2"></i>
+                    Invoice ${inv.invoiceNumber} - ₹${inv.totalAmount}
+                </div>`;
+            });
+            
+            if (!html) {
+                html = '<p>No recent activity yet.</p>';
+            }
+            
+            document.getElementById('recentActivity').innerHTML = html;
+        }
+        
+        function showSection(section) {
+            let title = '';
+            let content = '';
+            
+            switch(section) {
+                case 'clients':
+                    title = 'Client Management';
+                    content = getClientsContent();
+                    break;
+                case 'worksheets':
+                    title = 'Worksheet Management';
+                    content = getWorksheetsContent();
+                    break;
+                case 'invoices':
+                    title = 'Invoice Management';
+                    content = getInvoicesContent();
+                    break;
+                case 'reports':
+                    title = 'Reports';
+                    content = getReportsContent();
+                    break;
+            }
+            
+            document.getElementById('sectionTitle').textContent = title;
+            document.getElementById('contentArea').innerHTML = content;
+            
+            // Update active nav
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.closest('.nav-link').classList.add('active');
+        }
+        
+        function getClientsContent() {
+            return `
+                <div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6>Client List</h6>
+                        <button class="btn btn-primary btn-sm" onclick="addClient()">
+                            <i class="fas fa-plus me-1"></i> Add Client
+                        </button>
+                    </div>
+                    
+                    <div id="clientList">
+                        Loading clients...
+                    </div>
+                </div>
+                <script>
+                    loadClientList();
+                <\/script>
+            `;
+        }
+        
+        function loadClientList() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            let html = '';
+            
+            if (clients.length === 0) {
+                html = '<p>No clients found. Add your first client!</p>';
+            } else {
+                html = '<table class="table table-striped"><thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>GST</th></tr></thead><tbody>';
+                clients.forEach(client => {
+                    html += `<tr>
+                        <td>${client.name}</td>
+                        <td>${client.phone || 'N/A'}</td>
+                        <td>${client.address || 'N/A'}</td>
+                        <td>${client.gst || 'N/A'}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+            }
+            
+            document.getElementById('clientList').innerHTML = html;
+        }
+        
+        function addClient() {
+            const name = prompt('Enter client name:');
+            if (name) {
+                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                const newClient = {
+                    id: Date.now(),
+                    name: name,
+                    phone: prompt('Enter phone number:') || '',
+                    address: prompt('Enter address:') || '',
+                    gst: prompt('Enter GST number (optional):') || '',
+                    created: new Date().toISOString()
+                };
+                
+                clients.push(newClient);
+                localStorage.setItem('clients', JSON.stringify(clients));
+                loadClientList();
+                loadDashboard();
+                alert('Client added successfully!');
+            }
+        }
+        
+        function getWorksheetsContent() {
+            return `
+                <div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6>Worksheets</h6>
+                        <button class="btn btn-success btn-sm" onclick="addWorksheet()">
+                            <i class="fas fa-plus me-1"></i> Add Worksheet
+                        </button>
+                    </div>
+                    
+                    <div id="worksheetList">
+                        Loading worksheets...
+                    </div>
+                </div>
+                <script>
+                    loadWorksheetList();
+                <\/script>
+            `;
+        }
+        
+        function loadWorksheetList() {
+            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+            let html = '';
+            
+            if (worksheets.length === 0) {
+                html = '<p>No worksheets found. Add your first worksheet!</p>';
+            } else {
+                html = '<table class="table table-striped"><thead><tr><th>Date</th><th>Client</th><th>Crane No</th><th>Hours</th><th>Amount</th></tr></thead><tbody>';
+                worksheets.forEach(ws => {
+                    const amount = (parseFloat(ws.hours) * parseFloat(ws.rate)).toFixed(2);
+                    html += `<tr>
+                        <td>${ws.date}</td>
+                        <td>${ws.clientName}</td>
+                        <td>${ws.craneNumber}</td>
+                        <td>${ws.hours}</td>
+                        <td>₹${amount}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+            }
+            
+            document.getElementById('worksheetList').innerHTML = html;
+        }
+        
+        function addWorksheet() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            
+            if (clients.length === 0) {
+                alert('Please add clients first!');
+                return;
+            }
+            
+            let clientOptions = '';
+            clients.forEach(client => {
+                clientOptions += `<option value="${client.id}">${client.name}</option>`;
+            });
+            
+            const form = `
+                <div class="mb-3">
+                    <label class="form-label">Client</label>
+                    <select class="form-select" id="wsClient">
+                        ${clientOptions}
+                    </select>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" id="wsDate" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Crane Number</label>
+                        <input type="text" class="form-control" id="wsCrane" placeholder="Crane No">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-control" id="wsHours" placeholder="8" step="0.5">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Rate (₹/hour)</label>
+                        <input type="number" class="form-control" id="wsRate" placeholder="500">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Work Details</label>
+                    <textarea class="form-control" id="wsDetails" rows="2"></textarea>
+                </div>
+            `;
+            
+            if (confirm('Add new worksheet?')) {
+                const clientId = document.getElementById('wsClient')?.value || clients[0].id;
+                const client = clients.find(c => c.id == clientId);
+                
+                const newWorksheet = {
+                    id: Date.now(),
+                    clientId: clientId,
+                    clientName: client.name,
+                    date: document.getElementById('wsDate')?.value || new Date().toISOString().split('T')[0],
+                    craneNumber: document.getElementById('wsCrane')?.value || 'Crane-1',
+                    hours: parseFloat(document.getElementById('wsHours')?.value || 8),
+                    rate: parseFloat(document.getElementById('wsRate')?.value || 500),
+                    details: document.getElementById('wsDetails')?.value || 'Loading/Unloading work',
+                    created: new Date().toISOString()
+                };
+                
+                const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+                worksheets.push(newWorksheet);
+                localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                
+                loadWorksheetList();
+                loadDashboard();
+                alert('Worksheet added successfully!');
+            }
+        }
+        
+        function getInvoicesContent() {
+            return `
+                <div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6>Invoices</h6>
+                        <button class="btn btn-warning btn-sm" onclick="addInvoice()">
+                            <i class="fas fa-plus me-1"></i> Create Invoice
+                        </button>
+                    </div>
+                    
+                    <div id="invoiceList">
+                        Loading invoices...
+                    </div>
+                </div>
+                <script>
+                    loadInvoiceList();
+                <\/script>
+            `;
+        }
+        
+        function loadInvoiceList() {
+            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            let html = '';
+            
+            if (invoices.length === 0) {
+                html = '<p>No invoices found. Create your first invoice!</p>';
+            } else {
+                html = '<table class="table table-striped"><thead><tr><th>Invoice No</th><th>Date</th><th>Client</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+                invoices.forEach(inv => {
+                    html += `<tr>
+                        <td>${inv.invoiceNumber}</td>
+                        <td>${inv.date}</td>
+                        <td>${inv.clientName}</td>
+                        <td>₹${inv.totalAmount}</td>
+                        <td><span class="badge ${inv.paid ? 'bg-success' : 'bg-warning'}">${inv.paid ? 'Paid' : 'Pending'}</span></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+            }
+            
+            document.getElementById('invoiceList').innerHTML = html;
+        }
+        
+        function addInvoice() {
+            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            
+            if (worksheets.length === 0) {
+                alert('Please add worksheets first!');
+                return;
+            }
+            
+            // Group worksheets by client
+            const clientWorksheets = {};
+            worksheets.forEach(ws => {
+                if (!clientWorksheets[ws.clientId]) {
+                    clientWorksheets[ws.clientId] = [];
+                }
+                clientWorksheets[ws.clientId].push(ws);
+            });
+            
+            let options = '';
+            Object.keys(clientWorksheets).forEach(clientId => {
+                const client = clients.find(c => c.id == clientId);
+                if (client) {
+                    const totalAmount = clientWorksheets[clientId].reduce((sum, ws) => sum + (ws.hours * ws.rate), 0);
+                    options += `<option value="${clientId}">${client.name} - ₹${totalAmount.toFixed(2)} (${clientWorksheets[clientId].length} worksheets)</option>`;
+                }
+            });
+            
+            if (!options) {
+                alert('No worksheets available for invoicing');
+                return;
+            }
+            
+            const clientId = prompt('Select client for invoice:\n' + options.split('</option>').map(opt => opt.replace(/<[^>]*>/g, '')).join('\n'));
+            
+            if (clientId && clientWorksheets[clientId]) {
+                const client = clients.find(c => c.id == clientId);
+                const clientWs = clientWorksheets[clientId];
+                const totalAmount = clientWs.reduce((sum, ws) => sum + (ws.hours * ws.rate), 0);
+                
+                const invoiceNumber = 'INV-' + new Date().getFullYear() + '-' + (invoices.length + 1).toString().padStart(3, '0');
+                
+                const newInvoice = {
+                    invoiceNumber: invoiceNumber,
+                    clientId: clientId,
+                    clientName: client.name,
+                    date: new Date().toISOString().split('T')[0],
+                    totalAmount: totalAmount,
+                    worksheets: clientWs.map(ws => ws.id),
+                    paid: false,
+                    created: new Date().toISOString()
+                };
+                
+                const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+                invoices.push(newInvoice);
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                
+                loadInvoiceList();
+                loadDashboard();
+                alert(`Invoice ${invoiceNumber} created for ${client.name} for ₹${totalAmount.toFixed(2)}`);
+            }
+        }
+        
+        function getReportsContent() {
+            return `
+                <div>
+                    <h6>Business Reports</h6>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Monthly Summary</h6>
+                                    <canvas id="revenueChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Client Activity</h6>
+                                    <div id="clientActivity">
+                                        Loading...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+    
+    <!-- Chart.js for reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
