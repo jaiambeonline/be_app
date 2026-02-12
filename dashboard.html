@@ -1041,5 +1041,79 @@
             window.location.href = 'index.html';
         }
     </script>
+    <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
+        authDomain: "bhavishya-enterprise.firebaseapp.com",
+        projectId: "bhavishya-enterprise",
+        storageBucket: "bhavishya-enterprise.firebasestorage.app",
+        messagingSenderId: "68829794521",
+        appId: "1:68829794521:web:2933f17847e5d043666ec8"
+    };
+
+    // Initialize Firebase
+    if (typeof firebase === 'undefined') {
+        alert('Firebase not loaded. Data will be saved locally only.');
+    } else {
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            
+            // Override save functions to use Firebase
+            function saveClientToFirebase(client) {
+                return db.collection('clients').add(client);
+            }
+            
+            function saveWorksheetToFirebase(worksheet) {
+                return db.collection('worksheets').add(worksheet);
+            }
+            
+            function saveInvoiceToFirebase(invoice) {
+                return db.collection('invoices').add(invoice);
+            }
+            
+            // Load from Firebase
+            function loadFromFirebase() {
+                // Load clients
+                db.collection('clients').get().then(snapshot => {
+                    const clients = [];
+                    snapshot.forEach(doc => {
+                        clients.push({ id: doc.id, ...doc.data() });
+                    });
+                    localStorage.setItem('clients', JSON.stringify(clients));
+                });
+                
+                // Load worksheets
+                db.collection('worksheets').get().then(snapshot => {
+                    const worksheets = [];
+                    snapshot.forEach(doc => {
+                        worksheets.push({ id: doc.id, ...doc.data() });
+                    });
+                    localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                });
+                
+                // Load invoices
+                db.collection('invoices').get().then(snapshot => {
+                    const invoices = [];
+                    snapshot.forEach(doc => {
+                        invoices.push({ id: doc.id, ...doc.data() });
+                    });
+                    localStorage.setItem('invoices', JSON.stringify(invoices));
+                });
+            }
+            
+            // Call this on app load
+            loadFromFirebase();
+            
+        } catch (error) {
+            console.log('Using local storage only:', error);
+        }
+    }
+</script>
+
+<!-- Add Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </body>
 </html>
