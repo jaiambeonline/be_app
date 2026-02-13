@@ -5,1115 +5,258 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bhavishya Enterprise - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* Navigation */
-        .navbar {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .company-logo {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-        
-        /* Dashboard Cards */
-        .stat-card {
-            border: none;
-            border-radius: 10px;
-            color: white;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card.blue { background: linear-gradient(135deg, #3498db, #2980b9); }
-        .stat-card.green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-        .stat-card.orange { background: linear-gradient(135deg, #e67e22, #d35400); }
-        .stat-card.red { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-        
-        /* Main Content */
-        .main-content {
-            padding: 20px;
-        }
-        
-        /* Tabs */
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Table Styling */
-        .table th {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-        }
-        
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 15px;
-            }
-            
-            .stat-card {
-                margin-bottom: 10px;
-            }
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .error-box { background: #fee; color: #c00; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #c00; }
+        .success-box { background: #efe; color: #090; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #090; }
+        button { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <div class="company-logo d-inline-block me-2">BE</div>
-                Bhavishya Enterprise
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="navbar-text me-3">
-                    <i class="fas fa-user me-1"></i>
-                    <span id="userName">Admin</span>
-                    <span class="badge bg-light text-dark ms-2" id="userRole">Admin</span>
-                </span>
-                <button class="btn btn-sm btn-light" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+    <div class="container">
+        <div class="card">
+            <h2>Bhavishya Enterprise</h2>
+            <p>Welcome, <span id="userName">Admin</span> | <a href="#" onclick="logout()">Logout</a></p>
+        </div>
+        
+        <!-- Firebase Status Card -->
+        <div class="card">
+            <h3>🔵 Firebase Status</h3>
+            <div id="firebaseStatus" class="error-box">
+                Checking Firebase connection...
+            </div>
+            <div id="firebaseSolution" style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 5px; display: none;">
+                <strong>⚠️ Required Action:</strong>
+                <p id="solutionText"></p>
             </div>
         </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Dashboard Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h3 id="pageTitle">Dashboard</h3>
-                <p class="text-muted mb-0" id="currentDate"></p>
-            </div>
-            <div>
-                <button class="btn btn-primary" onclick="addClient()">
-                    <i class="fas fa-plus me-1"></i> Add Client
-                </button>
-                <button class="btn btn-success ms-2" onclick="addWorksheet()">
-                    <i class="fas fa-plus me-1"></i> Add Worksheet
-                </button>
+        
+        <!-- Quick Stats -->
+        <div class="card">
+            <h3>📊 Quick Stats</h3>
+            <div style="display: flex; justify-content: space-around;">
+                <div><strong id="clientCount">0</strong><br>Clients</div>
+                <div><strong id="worksheetCount">0</strong><br>Worksheets</div>
+                <div><strong id="invoiceCount">0</strong><br>Invoices</div>
             </div>
         </div>
-
-        <!-- Stats Cards -->
-        <div class="row">
-            <div class="col-md-3 col-6">
-                <div class="stat-card blue">
-                    <h5>Total Clients</h5>
-                    <h2 id="totalClients">0</h2>
-                </div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-card green">
-                    <h5>Worksheets</h5>
-                    <h2 id="totalWorksheets">0</h2>
-                </div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-card orange">
-                    <h5>Invoices</h5>
-                    <h2 id="totalInvoices">0</h2>
-                </div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-card red">
-                    <h5>Revenue</h5>
-                    <h2 id="totalRevenue">₹0</h2>
-                </div>
-            </div>
+        
+        <!-- Data Buttons -->
+        <div class="card">
+            <h3>📋 Data Management</h3>
+            <button onclick="testFirebaseConnection()">🔄 Test Firebase Connection</button>
+            <button onclick="enableFirestore()">⚡ Fix Firestore Database</button>
+            <button onclick="window.location.href='https://console.firebase.google.com/project/bhavishya-enterprise/firestore'">
+                🌐 Open Firebase Console
+            </button>
         </div>
-
-        <!-- Tabs Navigation -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs" id="mainTabs">
-                    <li class="nav-item">
-                        <button class="nav-link active" onclick="showTab('dashboard')">
-                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" onclick="showTab('clients')">
-                            <i class="fas fa-users me-1"></i> Clients
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" onclick="showTab('worksheets')">
-                            <i class="fas fa-clipboard-list me-1"></i> Worksheets
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" onclick="showTab('invoices')">
-                            <i class="fas fa-file-invoice-dollar me-1"></i> Invoices
-                        </button>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body">
-                <!-- Dashboard Tab -->
-                <div id="dashboardTab" class="tab-content active">
-                    <h5>Recent Activity</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Client</th>
-                                    <th>Crane Type</th>
-                                    <th>Hours</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recentActivity">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Clients Tab -->
-                <div id="clientsTab" class="tab-content">
-                    <div class="d-flex justify-content-between mb-3">
-                        <h5>Client Management</h5>
-                        <button class="btn btn-primary" onclick="addClient()">
-                            <i class="fas fa-plus me-1"></i> Add New Client
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Client Name</th>
-                                    <th>Contractor Name</th>
-                                    <th>Address</th>
-                                    <th>Mobile No</th>
-                                    <th>GST No</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="clientsTable">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Worksheets Tab -->
-                <div id="worksheetsTab" class="tab-content">
-                    <div class="d-flex justify-content-between mb-3">
-                        <h5>Worksheet Management</h5>
-                        <button class="btn btn-success" onclick="addWorksheet()">
-                            <i class="fas fa-plus me-1"></i> Add New Worksheet
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Contractor</th>
-                                    <th>Crane Type</th>
-                                    <th>In Time</th>
-                                    <th>Out Time</th>
-                                    <th>Total Hours</th>
-                                    <th>Amount</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="worksheetsTable">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Invoices Tab -->
-                <div id="invoicesTab" class="tab-content">
-                    <div class="d-flex justify-content-between mb-3">
-                        <h5>Invoice Management</h5>
-                        <button class="btn btn-warning" onclick="generateInvoice()">
-                            <i class="fas fa-plus me-1"></i> Generate Invoice
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Invoice No</th>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoicesTable">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        
+        <!-- Instructions -->
+        <div class="card">
+            <h3>📌 How to Fix Firebase Error:</h3>
+            <ol style="margin-top: 10px; line-height: 1.8;">
+                <li>Click <strong>"Open Firebase Console"</strong> button above</li>
+                <li>In Firebase Console, click <strong>"Firestore Database"</strong> in left menu</li>
+                <li>Click <strong>"Create database"</strong> button</li>
+                <li>Select <strong>"Start in test mode"</strong></li>
+                <li>Choose location: <strong>asia-south1</strong> (Mumbai)</li>
+                <li>Click <strong>"Enable"</strong></li>
+                <li>Refresh this page</li>
+            </ol>
         </div>
     </div>
 
-    <!-- Modals -->
-    
-    <!-- Client Modal -->
-    <div class="modal fade" id="clientModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Client</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="clientForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Client Name *</label>
-                                <input type="text" class="form-control" id="clientName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Contractor Name *</label>
-                                <input type="text" class="form-control" id="contractorName" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Mobile No *</label>
-                                <input type="tel" class="form-control" id="clientMobile" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" id="clientEmail">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Address *</label>
-                            <textarea class="form-control" id="clientAddress" rows="2" required></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">State *</label>
-                                <input type="text" class="form-control" id="clientState" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">GST No</label>
-                                <input type="text" class="form-control" id="clientGST">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Additional Notes</label>
-                            <textarea class="form-control" id="clientNotes" rows="2"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveClient()">Save Client</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Worksheet Modal -->
-    <div class="modal fade" id="worksheetModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Worksheet</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="worksheetForm">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Date *</label>
-                                <input type="date" class="form-control" id="workDate" required value="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Client *</label>
-                                <select class="form-control" id="workClient" required>
-                                    <option value="">Select Client</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Contractor Name</label>
-                                <input type="text" class="form-control" id="workContractor" readonly>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Crane Type *</label>
-                                <select class="form-control" id="craneType" required>
-                                    <option value="">Select Crane Type</option>
-                                    <option value="Hydra">Hydra</option>
-                                    <option value="Farena">Farena</option>
-                                    <option value="Crane">Crane</option>
-                                    <option value="Loader">Loader</option>
-                                    <option value="Excavator">Excavator</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Crane Number</label>
-                                <input type="text" class="form-control" id="craneNumber" placeholder="e.g., GJ-15-AB-1234">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Assign To *</label>
-                                <input type="text" class="form-control" id="assignTo" required placeholder="Operator/Sir Name">
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">In Time *</label>
-                                <input type="time" class="form-control" id="inTime" required value="09:00">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Out Time *</label>
-                                <input type="time" class="form-control" id="outTime" required value="17:00">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Lunch Break (minutes)</label>
-                                <input type="number" class="form-control" id="lunchBreak" value="30" min="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Total Hours</label>
-                                <input type="text" class="form-control" id="totalHours" readonly>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Work Details *</label>
-                            <textarea class="form-control" id="workDetails" rows="3" required placeholder="Describe the work done..."></textarea>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Unit Type *</label>
-                                <select class="form-control" id="unitType" required>
-                                    <option value="per_hour">Per Hour</option>
-                                    <option value="per_day">Per Day</option>
-                                    <option value="fixed">Fixed Rate</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Rate (₹) *</label>
-                                <input type="number" class="form-control" id="rate" required min="0" step="0.01">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Total Amount (₹)</label>
-                                <input type="text" class="form-control" id="totalAmount" readonly>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Remarks</label>
-                            <textarea class="form-control" id="workRemarks" rows="2" placeholder="Any additional remarks..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" onclick="saveWorksheet()">Save Worksheet</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if logged in
-            if (localStorage.getItem('loggedIn') !== 'true') {
-                window.location.href = 'index.html';
-                return;
-            }
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
+            authDomain: "bhavishya-enterprise.firebaseapp.com",
+            projectId: "bhavishya-enterprise",
+            storageBucket: "bhavishya-enterprise.firebasestorage.app",
+            messagingSenderId: "68829794521",
+            appId: "1:68829794521:web:2933f17847e5d043666ec8"
+        };
+
+        // Global variables
+        let db = null;
+        let firebaseReady = false;
+        let firestoreEnabled = false;
+
+        // Check login
+        if (localStorage.getItem('loggedIn') !== 'true') {
+            window.location.href = 'index.html';
+        }
+
+        // Set username
+        const user = JSON.parse(localStorage.getItem('currentUser') || '{"fullName":"Admin"}');
+        document.getElementById('userName').textContent = user.fullName;
+
+        // Initialize Firebase
+        function initFirebase() {
+            const statusEl = document.getElementById('firebaseStatus');
+            const solutionEl = document.getElementById('firebaseSolution');
+            const solutionText = document.getElementById('solutionText');
             
-            // Set current date
-            const now = new Date();
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-IN', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            // Set user info
-            const user = JSON.parse(localStorage.getItem('currentUser') || '{"fullName":"Admin","role":"admin"}');
-            document.getElementById('userName').textContent = user.fullName;
-            document.getElementById('userRole').textContent = user.role === 'admin' ? 'Admin' : 'Operator';
-            
-            // Load data
-            loadDashboardData();
-            loadClientsTable();
-            loadWorksheetsTable();
-            loadInvoicesTable();
-            
-            // Initialize time calculation
-            document.getElementById('inTime').addEventListener('change', calculateTotalHours);
-            document.getElementById('outTime').addEventListener('change', calculateTotalHours);
-            document.getElementById('lunchBreak').addEventListener('change', calculateTotalHours);
-            document.getElementById('rate').addEventListener('change', calculateTotalAmount);
-            
-            // Client selection change
-            document.getElementById('workClient').addEventListener('change', function() {
-                const clientId = this.value;
-                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-                const client = clients.find(c => c.id == clientId);
-                if (client) {
-                    document.getElementById('workContractor').value = client.contractorName || '';
+            try {
+                // Check if Firebase is loaded
+                if (typeof firebase === 'undefined') {
+                    statusEl.innerHTML = '❌ Firebase SDK not loaded - Check internet connection';
+                    statusEl.className = 'error-box';
+                    solutionEl.style.display = 'block';
+                    solutionText.innerHTML = 'Firebase SDK not loading. Check your internet connection and ad blockers.';
+                    return false;
                 }
-            });
-        });
-        
-        // Show tab
-        function showTab(tabName) {
-            // Update active tab
-            document.querySelectorAll('#mainTabs .nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Show tab content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            
-            // Update page title
-            const titles = {
-                'dashboard': 'Dashboard',
-                'clients': 'Client Management',
-                'worksheets': 'Worksheet Management',
-                'invoices': 'Invoice Management'
-            };
-            document.getElementById('pageTitle').textContent = titles[tabName];
-            
-            // Reload data for the tab
-            if (tabName === 'clients') {
-                loadClientsTable();
-            } else if (tabName === 'worksheets') {
-                loadWorksheetsTable();
-            } else if (tabName === 'invoices') {
-                loadInvoicesTable();
-            } else if (tabName === 'dashboard') {
-                loadDashboardData();
-            }
-        }
-        
-        // Load dashboard data
-        function loadDashboardData() {
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-            
-            // Update stats
-            document.getElementById('totalClients').textContent = clients.length;
-            document.getElementById('totalWorksheets').textContent = worksheets.length;
-            document.getElementById('totalInvoices').textContent = invoices.length;
-            
-            // Calculate total revenue
-            let totalRevenue = 0;
-            invoices.forEach(inv => {
-                totalRevenue += parseFloat(inv.totalAmount || 0);
-            });
-            document.getElementById('totalRevenue').textContent = '₹' + totalRevenue.toFixed(2);
-            
-            // Load recent activity
-            loadRecentActivity();
-        }
-        
-        // Load recent activity
-        function loadRecentActivity() {
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            const recent = worksheets.slice(-10).reverse(); // Last 10 worksheets
-            
-            let html = '';
-            if (recent.length === 0) {
-                html = '<tr><td colspan="6" class="text-center">No recent activity found</td></tr>';
-            } else {
-                recent.forEach(ws => {
-                    html += `<tr>
-                        <td>${ws.date}</td>
-                        <td><span class="badge bg-success">Worksheet</span></td>
-                        <td>${ws.clientName}</td>
-                        <td>${ws.craneType}</td>
-                        <td>${ws.totalHours}</td>
-                        <td>₹${ws.totalAmount}</td>
-                    </tr>`;
-                });
-            }
-            
-            document.getElementById('recentActivity').innerHTML = html;
-        }
-        
-        // Load clients table
-        function loadClientsTable() {
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            
-            let html = '';
-            if (clients.length === 0) {
-                html = '<tr><td colspan="6" class="text-center">No clients found. Add your first client!</td></tr>';
-            } else {
-                clients.forEach(client => {
-                    html += `<tr>
-                        <td>${client.name}</td>
-                        <td>${client.contractorName}</td>
-                        <td>${client.address}</td>
-                        <td>${client.mobile}</td>
-                        <td>${client.gst || 'N/A'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-warning me-1" onclick="editClient('${client.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteClient('${client.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-                });
-            }
-            
-            document.getElementById('clientsTable').innerHTML = html;
-        }
-        
-        // Load worksheets table
-        function loadWorksheetsTable() {
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            
-            let html = '';
-            if (worksheets.length === 0) {
-                html = '<tr><td colspan="9" class="text-center">No worksheets found. Add your first worksheet!</td></tr>';
-            } else {
-                worksheets.forEach(ws => {
-                    html += `<tr>
-                        <td>${ws.date}</td>
-                        <td>${ws.clientName}</td>
-                        <td>${ws.contractorName}</td>
-                        <td>${ws.craneType}</td>
-                        <td>${ws.inTime}</td>
-                        <td>${ws.outTime}</td>
-                        <td>${ws.totalHours} hours</td>
-                        <td>₹${ws.totalAmount}</td>
-                        <td>
-                            <button class="btn btn-sm btn-info me-1" onclick="viewWorksheet('${ws.id}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-warning me-1" onclick="editWorksheet('${ws.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteWorksheet('${ws.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-                });
-            }
-            
-            document.getElementById('worksheetsTable').innerHTML = html;
-        }
-        
-        // Load invoices table
-        function loadInvoicesTable() {
-            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-            
-            let html = '';
-            if (invoices.length === 0) {
-                html = '<tr><td colspan="6" class="text-center">No invoices found. Generate your first invoice!</td></tr>';
-            } else {
-                invoices.forEach(inv => {
-                    html += `<tr>
-                        <td>${inv.invoiceNumber}</td>
-                        <td>${inv.date}</td>
-                        <td>${inv.clientName}</td>
-                        <td>₹${inv.totalAmount}</td>
-                        <td><span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status === 'paid' ? 'Paid' : 'Pending'}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-info me-1" onclick="viewInvoice('${inv.id}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-success me-1" onclick="markAsPaid('${inv.id}')">
-                                <i class="fas fa-check"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-                });
-            }
-            
-            document.getElementById('invoicesTable').innerHTML = html;
-        }
-        
-        // Open client modal
-        function addClient() {
-            // Reset form
-            document.getElementById('clientForm').reset();
-            document.querySelector('#clientModal .modal-title').textContent = 'Add New Client';
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('clientModal'));
-            modal.show();
-        }
-        
-        // Save client
-        function saveClient() {
-            const clientName = document.getElementById('clientName').value;
-            const contractorName = document.getElementById('contractorName').value;
-            const clientMobile = document.getElementById('clientMobile').value;
-            const clientAddress = document.getElementById('clientAddress').value;
-            
-            if (!clientName || !contractorName || !clientMobile || !clientAddress) {
-                alert('Please fill all required fields (*)');
-                return;
-            }
-            
-            const client = {
-                id: Date.now().toString(),
-                name: clientName,
-                contractorName: contractorName,
-                mobile: clientMobile,
-                email: document.getElementById('clientEmail').value,
-                address: clientAddress,
-                state: document.getElementById('clientState').value,
-                gst: document.getElementById('clientGST').value,
-                notes: document.getElementById('clientNotes').value,
-                created: new Date().toISOString()
-            };
-            
-            // Save to local storage
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            clients.push(client);
-            localStorage.setItem('clients', JSON.stringify(clients));
-            
-            // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
-            
-            // Refresh data
-            loadDashboardData();
-            loadClientsTable();
-            
-            alert('Client saved successfully!');
-        }
-        
-        // Open worksheet modal
-        function addWorksheet() {
-            // Reset form
-            document.getElementById('worksheetForm').reset();
-            
-            // Set default date
-            document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
-            
-            // Load clients dropdown
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            const clientSelect = document.getElementById('workClient');
-            clientSelect.innerHTML = '<option value="">Select Client</option>';
-            clients.forEach(client => {
-                clientSelect.innerHTML += `<option value="${client.id}">${client.name} (${client.contractorName})</option>`;
-            });
-            
-            // Reset calculations
-            document.getElementById('totalHours').value = '';
-            document.getElementById('totalAmount').value = '';
-            
-            document.querySelector('#worksheetModal .modal-title').textContent = 'Add New Worksheet';
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('worksheetModal'));
-            modal.show();
-        }
-        
-        // Calculate total hours
-        function calculateTotalHours() {
-            const inTime = document.getElementById('inTime').value;
-            const outTime = document.getElementById('outTime').value;
-            const lunchBreak = parseInt(document.getElementById('lunchBreak').value) || 0;
-            
-            if (inTime && outTime) {
-                const inDate = new Date(`2000-01-01T${inTime}`);
-                const outDate = new Date(`2000-01-01T${outTime}`);
                 
-                let diffHours = (outDate - inDate) / (1000 * 60 * 60);
-                diffHours -= lunchBreak / 60; // Subtract lunch break in hours
+                // Initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
                 
-                if (diffHours > 0) {
-                    document.getElementById('totalHours').value = diffHours.toFixed(2) + ' hours';
-                    calculateTotalAmount();
-                } else {
-                    document.getElementById('totalHours').value = '0 hours';
-                    document.getElementById('totalAmount').value = '₹0';
-                }
-            }
-        }
-        
-        // Calculate total amount
-        function calculateTotalAmount() {
-            const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
-            const rate = parseFloat(document.getElementById('rate').value) || 0;
-            const unitType = document.getElementById('unitType').value;
-            
-            let amount = 0;
-            if (unitType === 'per_hour') {
-                amount = totalHours * rate;
-            } else if (unitType === 'per_day') {
-                amount = (totalHours / 8) * rate; // Assuming 8 hours per day
-            } else if (unitType === 'fixed') {
-                amount = rate;
-            }
-            
-            document.getElementById('totalAmount').value = '₹' + amount.toFixed(2);
-        }
-        
-        // Save worksheet
-        function saveWorksheet() {
-            const workDate = document.getElementById('workDate').value;
-            const clientId = document.getElementById('workClient').value;
-            const craneType = document.getElementById('craneType').value;
-            const assignTo = document.getElementById('assignTo').value;
-            const workDetails = document.getElementById('workDetails').value;
-            const rate = document.getElementById('rate').value;
-            
-            if (!workDate || !clientId || !craneType || !assignTo || !workDetails || !rate) {
-                alert('Please fill all required fields (*)');
-                return;
-            }
-            
-            // Get client details
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            const client = clients.find(c => c.id == clientId);
-            
-            if (!client) {
-                alert('Please select a valid client');
-                return;
-            }
-            
-            const worksheet = {
-                id: Date.now().toString(),
-                date: workDate,
-                clientId: clientId,
-                clientName: client.name,
-                contractorName: client.contractorName,
-                craneType: craneType,
-                craneNumber: document.getElementById('craneNumber').value,
-                assignTo: assignTo,
-                inTime: document.getElementById('inTime').value,
-                outTime: document.getElementById('outTime').value,
-                lunchBreak: parseInt(document.getElementById('lunchBreak').value) || 0,
-                totalHours: parseFloat(document.getElementById('totalHours').value) || 0,
-                workDetails: workDetails,
-                unitType: document.getElementById('unitType').value,
-                rate: parseFloat(rate),
-                totalAmount: parseFloat(document.getElementById('totalAmount').value.replace('₹', '')) || 0,
-                remarks: document.getElementById('workRemarks').value,
-                created: new Date().toISOString()
-            };
-            
-            // Save to local storage
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            worksheets.push(worksheet);
-            localStorage.setItem('worksheets', JSON.stringify(worksheets));
-            
-            // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide();
-            
-            // Refresh data
-            loadDashboardData();
-            loadWorksheetsTable();
-            
-            alert('Worksheet saved successfully!');
-        }
-        
-        // Generate invoice
-        function generateInvoice() {
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            
-            if (worksheets.length === 0) {
-                alert('No worksheets available to generate invoice');
-                return;
-            }
-            
-            // Group worksheets by client
-            const clientWorksheets = {};
-            worksheets.forEach(ws => {
-                if (!ws.invoiced) { // Only include non-invoiced worksheets
-                    if (!clientWorksheets[ws.clientId]) {
-                        clientWorksheets[ws.clientId] = [];
-                    }
-                    clientWorksheets[ws.clientId].push(ws);
-                }
-            });
-            
-            // Create invoice for each client
-            Object.keys(clientWorksheets).forEach(clientId => {
-                const client = clients.find(c => c.id == clientId);
-                if (client && clientWorksheets[clientId].length > 0) {
-                    const wsList = clientWorksheets[clientId];
-                    const totalAmount = wsList.reduce((sum, ws) => sum + ws.totalAmount, 0);
-                    
-                    // Create invoice
-                    const invoice = {
-                        id: Date.now().toString() + '-' + clientId,
-                        invoiceNumber: 'INV-' + new Date().getFullYear() + '-' + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0'),
-                        date: new Date().toISOString().split('T')[0],
-                        clientId: clientId,
-                        clientName: client.name,
-                        worksheets: wsList.map(ws => ws.id),
-                        totalAmount: totalAmount,
-                        status: 'pending',
-                        created: new Date().toISOString()
-                    };
-                    
-                    // Save invoice
-                    const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-                    invoices.push(invoice);
-                    localStorage.setItem('invoices', JSON.stringify(invoices));
-                    
-                    // Mark worksheets as invoiced
-                    wsList.forEach(ws => {
-                        ws.invoiced = true;
+                // Try to get Firestore
+                db = firebase.firestore();
+                
+                // Test Firestore connection
+                db.collection('test').doc('test').get()
+                    .then(() => {
+                        // SUCCESS - Firestore is enabled
+                        firestoreEnabled = true;
+                        firebaseReady = true;
+                        statusEl.innerHTML = '✅ Firebase Connected Successfully! Firestore is enabled.';
+                        statusEl.className = 'success-box';
+                        solutionEl.style.display = 'none';
+                        console.log('✅ Firestore is working!');
+                        
+                        // Load data from Firestore
+                        loadFromFirestore();
+                    })
+                    .catch((error) => {
+                        // ERROR - Firestore not enabled
+                        firestoreEnabled = false;
+                        firebaseReady = false;
+                        statusEl.innerHTML = '⚠️ Firebase connected but Firestore NOT enabled';
+                        statusEl.className = 'error-box';
+                        solutionEl.style.display = 'block';
+                        
+                        if (error.message.includes('Missing or insufficient permissions')) {
+                            solutionText.innerHTML = 'Firestore Database is not enabled. Click the "Fix Firestore Database" button above to enable it.';
+                        } else if (error.message.includes('The Cloud Firestore API is not enabled')) {
+                            solutionText.innerHTML = 'The Cloud Firestore API is not enabled. Click the "Fix Firestore Database" button above to enable it.';
+                        } else {
+                            solutionText.innerHTML = 'Error: ' + error.message + '<br><br>Click "Fix Firestore Database" button above to enable Firestore.';
+                        }
+                        
+                        console.error('❌ Firestore error:', error.message);
+                        // Load from local storage as fallback
+                        loadFromLocalStorage();
                     });
                     
-                    // Update worksheets in storage
+                return true;
+                
+            } catch (error) {
+                firebaseReady = false;
+                statusEl.innerHTML = '❌ Firebase initialization failed';
+                statusEl.className = 'error-box';
+                solutionEl.style.display = 'block';
+                solutionText.innerHTML = 'Error: ' + error.message;
+                console.error('❌ Firebase init error:', error);
+                
+                // Load from local storage as fallback
+                loadFromLocalStorage();
+                return false;
+            }
+        }
+
+        // Load from Firestore
+        function loadFromFirestore() {
+            console.log('📥 Loading data from Firestore...');
+            
+            // Load clients
+            db.collection('clients').get()
+                .then(snapshot => {
+                    const clients = [];
+                    snapshot.forEach(doc => {
+                        clients.push({ id: doc.id, ...doc.data() });
+                    });
+                    localStorage.setItem('clients', JSON.stringify(clients));
+                    document.getElementById('clientCount').textContent = clients.length;
+                })
+                .catch(err => console.error('Error loading clients:', err));
+            
+            // Load worksheets
+            db.collection('worksheets').get()
+                .then(snapshot => {
+                    const worksheets = [];
+                    snapshot.forEach(doc => {
+                        worksheets.push({ id: doc.id, ...doc.data() });
+                    });
                     localStorage.setItem('worksheets', JSON.stringify(worksheets));
-                }
-            });
+                    document.getElementById('worksheetCount').textContent = worksheets.length;
+                })
+                .catch(err => console.error('Error loading worksheets:', err));
             
-            // Refresh data
-            loadDashboardData();
-            loadInvoicesTable();
-            
-            alert('Invoice generated successfully!');
-        }
-        
-        // Edit client
-        function editClient(id) {
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            const client = clients.find(c => c.id == id);
-            
-            if (client) {
-                // Fill form
-                document.getElementById('clientName').value = client.name;
-                document.getElementById('contractorName').value = client.contractorName;
-                document.getElementById('clientMobile').value = client.mobile;
-                document.getElementById('clientEmail').value = client.email || '';
-                document.getElementById('clientAddress').value = client.address;
-                document.getElementById('clientState').value = client.state || '';
-                document.getElementById('clientGST').value = client.gst || '';
-                document.getElementById('clientNotes').value = client.notes || '';
-                
-                document.querySelector('#clientModal .modal-title').textContent = 'Edit Client';
-                
-                // Store client ID for update
-                document.getElementById('clientModal').dataset.editId = id;
-                
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById('clientModal'));
-                modal.show();
-            }
-        }
-        
-        // Delete client
-        function deleteClient(id) {
-            if (confirm('Are you sure you want to delete this client?')) {
-                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-                const updatedClients = clients.filter(c => c.id !== id);
-                localStorage.setItem('clients', JSON.stringify(updatedClients));
-                
-                // Refresh data
-                loadDashboardData();
-                loadClientsTable();
-                
-                alert('Client deleted successfully!');
-            }
-        }
-        
-        // View worksheet
-        function viewWorksheet(id) {
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            const worksheet = worksheets.find(ws => ws.id === id);
-            
-            if (worksheet) {
-                let details = `=== WORKSHEET DETAILS ===\n\n`;
-                details += `Date: ${worksheet.date}\n`;
-                details += `Client: ${worksheet.clientName}\n`;
-                details += `Contractor: ${worksheet.contractorName}\n`;
-                details += `Crane Type: ${worksheet.craneType}\n`;
-                details += `Crane No: ${worksheet.craneNumber || 'N/A'}\n`;
-                details += `Assign To: ${worksheet.assignTo}\n`;
-                details += `In Time: ${worksheet.inTime}\n`;
-                details += `Out Time: ${worksheet.outTime}\n`;
-                details += `Lunch Break: ${worksheet.lunchBreak} minutes\n`;
-                details += `Total Hours: ${worksheet.totalHours}\n`;
-                details += `Work Details: ${worksheet.workDetails}\n`;
-                details += `Rate Type: ${worksheet.unitType}\n`;
-                details += `Rate: ₹${worksheet.rate}\n`;
-                details += `Total Amount: ₹${worksheet.totalAmount}\n`;
-                details += `Remarks: ${worksheet.remarks || 'N/A'}\n`;
-                
-                alert(details);
-            }
-        }
-        
-        // Delete worksheet
-        function deleteWorksheet(id) {
-            if (confirm('Are you sure you want to delete this worksheet?')) {
-                const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-                const updatedWorksheets = worksheets.filter(ws => ws.id !== id);
-                localStorage.setItem('worksheets', JSON.stringify(updatedWorksheets));
-                
-                // Refresh data
-                loadDashboardData();
-                loadWorksheetsTable();
-                
-                alert('Worksheet deleted successfully!');
-            }
-        }
-        
-        // View invoice
-        function viewInvoice(id) {
-            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-            const invoice = invoices.find(inv => inv.id === id);
-            
-            if (invoice) {
-                alert(`Invoice Details:\n\nInvoice No: ${invoice.invoiceNumber}\nDate: ${invoice.date}\nClient: ${invoice.clientName}\nAmount: ₹${invoice.totalAmount}\nStatus: ${invoice.status}`);
-            }
-        }
-        
-        // Mark as paid
-        function markAsPaid(id) {
-            if (confirm('Mark this invoice as paid?')) {
-                const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-                const invoiceIndex = invoices.findIndex(inv => inv.id === id);
-                
-                if (invoiceIndex !== -1) {
-                    invoices[invoiceIndex].status = 'paid';
+            // Load invoices
+            db.collection('invoices').get()
+                .then(snapshot => {
+                    const invoices = [];
+                    snapshot.forEach(doc => {
+                        invoices.push({ id: doc.id, ...doc.data() });
+                    });
                     localStorage.setItem('invoices', JSON.stringify(invoices));
-                    
-                    // Refresh data
-                    loadDashboardData();
-                    loadInvoicesTable();
-                    
-                    alert('Invoice marked as paid!');
-                }
-            }
+                    document.getElementById('invoiceCount').textContent = invoices.length;
+                })
+                .catch(err => console.error('Error loading invoices:', err));
         }
-        
+
+        // Load from Local Storage
+        function loadFromLocalStorage() {
+            console.log('📥 Loading data from Local Storage...');
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            
+            document.getElementById('clientCount').textContent = clients.length;
+            document.getElementById('worksheetCount').textContent = worksheets.length;
+            document.getElementById('invoiceCount').textContent = invoices.length;
+        }
+
+        // Test Firebase Connection
+        function testFirebaseConnection() {
+            initFirebase();
+        }
+
+        // Enable Firestore - Opens the correct Firebase Console page
+        function enableFirestore() {
+            window.open('https://console.firebase.google.com/project/bhavishya-enterprise/firestore', '_blank');
+            alert('1. Click "Create database"\n2. Choose "Start in test mode"\n3. Select "asia-south1" (Mumbai)\n4. Click "Enable"\n5. Then refresh this page');
+        }
+
         // Logout
         function logout() {
             localStorage.removeItem('loggedIn');
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initFirebase();
+        });
+
+        // Make functions global
+        window.testFirebaseConnection = testFirebaseConnection;
+        window.enableFirestore = enableFirestore;
+        window.logout = logout;
     </script>
-    <script>
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
-        authDomain: "bhavishya-enterprise.firebaseapp.com",
-        projectId: "bhavishya-enterprise",
-        storageBucket: "bhavishya-enterprise.firebasestorage.app",
-        messagingSenderId: "68829794521",
-        appId: "1:68829794521:web:2933f17847e5d043666ec8"
-    };
-
-    // Initialize Firebase
-    if (typeof firebase === 'undefined') {
-        alert('Firebase not loaded. Data will be saved locally only.');
-    } else {
-        try {
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-            
-            // Override save functions to use Firebase
-            function saveClientToFirebase(client) {
-                return db.collection('clients').add(client);
-            }
-            
-            function saveWorksheetToFirebase(worksheet) {
-                return db.collection('worksheets').add(worksheet);
-            }
-            
-            function saveInvoiceToFirebase(invoice) {
-                return db.collection('invoices').add(invoice);
-            }
-            
-            // Load from Firebase
-            function loadFromFirebase() {
-                // Load clients
-                db.collection('clients').get().then(snapshot => {
-                    const clients = [];
-                    snapshot.forEach(doc => {
-                        clients.push({ id: doc.id, ...doc.data() });
-                    });
-                    localStorage.setItem('clients', JSON.stringify(clients));
-                });
-                
-                // Load worksheets
-                db.collection('worksheets').get().then(snapshot => {
-                    const worksheets = [];
-                    snapshot.forEach(doc => {
-                        worksheets.push({ id: doc.id, ...doc.data() });
-                    });
-                    localStorage.setItem('worksheets', JSON.stringify(worksheets));
-                });
-                
-                // Load invoices
-                db.collection('invoices').get().then(snapshot => {
-                    const invoices = [];
-                    snapshot.forEach(doc => {
-                        invoices.push({ id: doc.id, ...doc.data() });
-                    });
-                    localStorage.setItem('invoices', JSON.stringify(invoices));
-                });
-            }
-            
-            // Call this on app load
-            loadFromFirebase();
-            
-        } catch (error) {
-            console.log('Using local storage only:', error);
-        }
-    }
-</script>
-
-<!-- Add Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </body>
 </html>
