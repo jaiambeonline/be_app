@@ -5,137 +5,134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bhavishya Enterprise - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDK - LOAD IN CORRECT ORDER -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .company-logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(45deg, #2c3e50, #3498db);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
-            margin: 0 auto 20px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .btn-login {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .error-box { background: #fee; color: #c00; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #c00; }
+        .success-box { background: #efe; color: #090; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #090; }
+        .hidden { display: none; }
+        button { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; width: 100%; font-size: 16px; cursor: pointer; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="company-logo">BE</div>
-        <h3 class="text-center mb-2">Bhavishya Enterprise</h3>
-        <p class="text-center text-muted mb-4">Crane Service Management System</p>
+    <div class="container">
+        <h2 style="text-align: center;">Bhavishya Enterprise</h2>
+        <p style="text-align: center; color: #666;">Crane Service Management</p>
+        
+        <!-- Firebase Status Display -->
+        <div id="firebaseStatus" class="error-box">
+            🔴 Checking Firebase connection...
+        </div>
+        
+        <div id="debugInfo" style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 14px;">
+            <strong>Debug Info:</strong>
+            <div id="debugMessage"></div>
+        </div>
         
         <form id="loginForm">
-            <div class="mb-3">
-                <label class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" required placeholder="Enter username" value="admin">
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" required placeholder="Enter password" value="admin123">
-            </div>
-            
-            <button type="submit" class="btn btn-login btn-primary w-100 mt-3">
-                <span id="loginBtnText">Login</span>
-                <span id="loginLoading" class="loading hidden"></span>
-            </button>
+            <input type="text" id="username" placeholder="Username" value="admin" required>
+            <input type="password" id="password" placeholder="Password" value="admin123" required>
+            <button type="submit" id="loginBtn">Login</button>
         </form>
         
-        <div class="mt-4 text-center">
-            <p class="mb-2"><strong>Default Login:</strong></p>
-            <p class="mb-1">Username: admin</p>
-            <p class="mb-0">Password: admin123</p>
+        <div style="margin-top: 20px; text-align: center; color: #666;">
+            Default: admin / admin123
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if already logged in
-            if (localStorage.getItem('loggedIn') === 'true') {
-                window.location.href = 'dashboard.html';
-            }
+        // ============================================
+        // FIREBASE DIAGNOSTICS - SHOWS EXACT ERROR
+        // ============================================
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAXNe8AMw6tyFSHUGP13357elIkPuCoFM",
+            authDomain: "bhavishya-enterprise.firebaseapp.com",
+            projectId: "bhavishya-enterprise",
+            storageBucket: "bhavishya-enterprise.firebasestorage.app",
+            messagingSenderId: "68829794521",
+            appId: "1:68829794521:web:2933f17847e5d043666ec8"
+        };
+
+        let debugEl = document.getElementById('debugMessage');
+        let statusEl = document.getElementById('firebaseStatus');
+        
+        function addDebug(message) {
+            console.log(message);
+            debugEl.innerHTML += message + '<br>';
+        }
+
+        // STEP 1: Check if Firebase SDK is loaded
+        addDebug('1. Checking Firebase SDK...');
+        
+        if (typeof firebase === 'undefined') {
+            statusEl.innerHTML = '🔴 Firebase SDK NOT LOADED - Check internet connection';
+            statusEl.className = 'error-box';
+            addDebug('❌ Firebase SDK not found - Scripts not loading');
+        } else {
+            addDebug('✅ Firebase SDK loaded successfully');
             
-            // Login form handler
-            document.getElementById('loginForm').addEventListener('submit', function(e) {
-                e.preventDefault();
+            // STEP 2: Try to initialize Firebase
+            try {
+                addDebug('2. Initializing Firebase...');
                 
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    addDebug('✅ Firebase initialized');
+                } else {
+                    addDebug('✅ Firebase already initialized');
+                }
                 
-                // Show loading
-                document.getElementById('loginBtnText').classList.add('hidden');
-                document.getElementById('loginLoading').classList.remove('hidden');
+                // STEP 3: Check Firestore
+                addDebug('3. Checking Firestore...');
+                const db = firebase.firestore();
                 
-                // Simple authentication
-                setTimeout(() => {
-                    if (username === 'admin' && password === 'admin123') {
-                        // Set login flag
-                        localStorage.setItem('loggedIn', 'true');
-                        localStorage.setItem('currentUser', JSON.stringify({
-                            username: 'admin',
-                            fullName: 'Administrator',
-                            role: 'admin'
-                        }));
-                        
-                        // Redirect to dashboard
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        alert('Invalid credentials! Use:\nUsername: admin\nPassword: admin123');
-                        document.getElementById('loginBtnText').classList.remove('hidden');
-                        document.getElementById('loginLoading').classList.add('hidden');
-                    }
-                }, 500);
-            });
+                // Try to test connection
+                db.collection('test').doc('test').get()
+                    .then(() => {
+                        statusEl.innerHTML = '✅ Firebase Connected Successfully! Firestore is working.';
+                        statusEl.className = 'success-box';
+                        addDebug('✅ Firestore is working! You can now use cloud sync.');
+                    })
+                    .catch((error) => {
+                        statusEl.innerHTML = '⚠️ Firebase connected but Firestore NOT enabled!';
+                        statusEl.className = 'error-box';
+                        addDebug('❌ Firestore error: ' + error.message);
+                        addDebug('👉 SOLUTION: Go to Firebase Console → Firestore Database → Create Database');
+                    });
+                    
+            } catch (error) {
+                statusEl.innerHTML = '🔴 Firebase initialization failed';
+                statusEl.className = 'error-box';
+                addDebug('❌ Error: ' + error.message);
+            }
+        }
+
+        // Login Handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === 'admin' && password === 'admin123') {
+                localStorage.setItem('loggedIn', 'true');
+                localStorage.setItem('currentUser', JSON.stringify({
+                    username: 'admin',
+                    fullName: 'Administrator',
+                    role: 'admin'
+                }));
+                window.location.href = 'dashboard.html';
+            } else {
+                alert('Invalid credentials');
+            }
         });
     </script>
 </body>
