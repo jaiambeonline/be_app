@@ -2,81 +2,623 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bhavishya Enterprise - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Bhavishya Enterprise - Crane Service Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .error-box { background: #fee; color: #c00; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #c00; }
-        .success-box { background: #efe; color: #090; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #090; }
-        button { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        .hidden { display: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding-bottom: 80px;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .company-logo {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Stats Cards */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 15px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:active {
+            transform: scale(0.95);
+        }
+        
+        .stat-card.blue { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+        .stat-card.green { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+        .stat-card.orange { background: linear-gradient(135deg, #e67e22, #d35400); color: white; }
+        .stat-card.red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+        
+        .stat-number {
+            font-size: 26px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        /* Mobile Bottom Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 5px;
+            color: #7f8c8d;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .nav-item.active {
+            color: var(--secondary);
+            background: #e8f4fc;
+        }
+        
+        .nav-item i {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .nav-item span {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* Content Sections */
+        .section {
+            display: none;
+            padding: 15px;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            background: white;
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--secondary), #2980b9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 5px 20px rgba(52,152,219,0.4);
+            border: none;
+            z-index: 1001;
+            transition: transform 0.2s;
+        }
+        
+        .fab:active {
+            transform: scale(0.9);
+        }
+        
+        /* Tables */
+        .table-responsive {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .table td {
+            vertical-align: middle;
+            font-size: 13px;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .badge-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* Sync Status */
+        .sync-status {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .sync-status i {
+            margin-right: 5px;
+        }
+        
+        /* Forms */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.25);
+        }
+        
+        .btn {
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary), #2980b9);
+            border: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border: none;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border: none;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+        }
+        
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: var(--secondary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #95a5a6;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .stats-row {
+                gap: 8px;
+                padding: 10px;
+            }
+            
+            .stat-card {
+                padding: 12px 5px;
+            }
+            
+            .stat-number {
+                font-size: 20px;
+            }
+            
+            .stat-card small {
+                font-size: 11px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h2>Bhavishya Enterprise</h2>
-            <p>Welcome, <span id="userName">Admin</span> | <a href="#" onclick="logout()">Logout</a></p>
-        </div>
-        
-        <!-- Firebase Status Card -->
-        <div class="card">
-            <h3>🔵 Firebase Status</h3>
-            <div id="firebaseStatus" class="error-box">
-                Checking Firebase connection...
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <div class="company-logo me-3">BE</div>
+                <div>
+                    <div class="fw-bold fs-6">Bhavishya Enterprise</div>
+                    <span class="sync-status" id="syncStatus">
+                        <i class="fas fa-cloud"></i> Cloud Sync
+                    </span>
+                </div>
             </div>
-            <div id="firebaseSolution" style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 5px; display: none;">
-                <strong>⚠️ Required Action:</strong>
-                <p id="solutionText"></p>
-            </div>
-        </div>
-        
-        <!-- Quick Stats -->
-        <div class="card">
-            <h3>📊 Quick Stats</h3>
-            <div style="display: flex; justify-content: space-around;">
-                <div><strong id="clientCount">0</strong><br>Clients</div>
-                <div><strong id="worksheetCount">0</strong><br>Worksheets</div>
-                <div><strong id="invoiceCount">0</strong><br>Invoices</div>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="fas fa-user-circle me-1"></i>
+                    <span id="userName">Admin</span>
+                </span>
+                <button class="btn btn-sm btn-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </div>
-        
-        <!-- Data Buttons -->
-        <div class="card">
-            <h3>📋 Data Management</h3>
-            <button onclick="testFirebaseConnection()">🔄 Test Firebase Connection</button>
-            <button onclick="enableFirestore()">⚡ Fix Firestore Database</button>
-            <button onclick="window.location.href='https://console.firebase.google.com/project/bhavishya-enterprise/firestore'">
-                🌐 Open Firebase Console
-            </button>
+    </nav>
+
+    <!-- Stats Cards -->
+    <div class="stats-row">
+        <div class="stat-card blue">
+            <i class="fas fa-users mb-2"></i>
+            <small>Clients</small>
+            <div class="stat-number" id="totalClients">0</div>
         </div>
-        
-        <!-- Instructions -->
-        <div class="card">
-            <h3>📌 How to Fix Firebase Error:</h3>
-            <ol style="margin-top: 10px; line-height: 1.8;">
-                <li>Click <strong>"Open Firebase Console"</strong> button above</li>
-                <li>In Firebase Console, click <strong>"Firestore Database"</strong> in left menu</li>
-                <li>Click <strong>"Create database"</strong> button</li>
-                <li>Select <strong>"Start in test mode"</strong></li>
-                <li>Choose location: <strong>asia-south1</strong> (Mumbai)</li>
-                <li>Click <strong>"Enable"</strong></li>
-                <li>Refresh this page</li>
-            </ol>
+        <div class="stat-card green">
+            <i class="fas fa-clipboard-list mb-2"></i>
+            <small>Worksheets</small>
+            <div class="stat-number" id="totalWorksheets">0</div>
+        </div>
+        <div class="stat-card orange">
+            <i class="fas fa-file-invoice mb-2"></i>
+            <small>Invoices</small>
+            <div class="stat-number" id="totalInvoices">0</div>
+        </div>
+        <div class="stat-card red">
+            <i class="fas fa-rupee-sign mb-2"></i>
+            <small>Revenue</small>
+            <div class="stat-number" id="totalRevenue">₹0</div>
         </div>
     </div>
 
+    <!-- Content Sections -->
+    
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" class="section active">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-clock me-2"></i> Recent Activity
+            </div>
+            <div class="card-body p-0">
+                <div id="recentActivity" class="list-group list-group-flush">
+                    <!-- Recent activity will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="fas fa-chart-line me-2"></i> Quick Overview
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-hand-holding-usd fa-2x text-primary mb-2"></i>
+                            <h6>Pending Amount</h6>
+                            <h5 id="pendingAmount">₹0</h5>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <h6>Paid Amount</h6>
+                            <h5 id="paidAmount">₹0</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Section -->
+    <div id="clientsSection" class="section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-users me-2 text-primary"></i>Clients</h5>
+            <button class="btn btn-primary btn-sm" onclick="showAddClientModal()">
+                <i class="fas fa-plus me-1"></i> Add Client
+            </button>
+        </div>
+        <div id="clientsList"></div>
+    </div>
+
+    <!-- Worksheets Section -->
+    <div id="worksheetsSection" class="section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list me-2 text-success"></i>Worksheets</h5>
+            <button class="btn btn-success btn-sm" onclick="showAddWorksheetModal()">
+                <i class="fas fa-plus me-1"></i> Add Worksheet
+            </button>
+        </div>
+        <div id="worksheetsList"></div>
+    </div>
+
+    <!-- Invoices Section -->
+    <div id="invoicesSection" class="section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2 text-warning"></i>Invoices</h5>
+            <button class="btn btn-warning btn-sm" onclick="generateInvoice()">
+                <i class="fas fa-file-invoice me-1"></i> Generate
+            </button>
+        </div>
+        <div id="invoicesList"></div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-nav">
+        <a href="#" class="nav-item active" onclick="switchSection('dashboard', this)">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchSection('clients', this)">
+            <i class="fas fa-users"></i>
+            <span>Clients</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchSection('worksheets', this)">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Work</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchSection('invoices', this)">
+            <i class="fas fa-file-invoice"></i>
+            <span>Invoices</span>
+        </a>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="quickAdd()">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Client Modal -->
+    <div class="modal fade" id="clientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="clientForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Client Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="clientName" placeholder="Enter client name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contractor Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="contractorName" placeholder="Enter contractor name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mobile Number <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="clientMobile" placeholder="Enter 10 digit mobile" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="clientAddress" rows="2" placeholder="Enter full address" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">GST Number</label>
+                            <input type="text" class="form-control" id="clientGST" placeholder="Enter GST number (optional)">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveClient()" id="saveClientBtn">Save Client</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worksheet Modal -->
+    <div class="modal fade" id="worksheetModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Worksheet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="worksheetForm">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="workDate" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Client <span class="text-danger">*</span></label>
+                                <select class="form-control" id="workClient" required>
+                                    <option value="">Select Client</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Crane Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="craneType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Hydra">Hydra</option>
+                                    <option value="Farena">Farena</option>
+                                    <option value="Crane">Crane</option>
+                                    <option value="Loader">Loader</option>
+                                    <option value="Excavator">Excavator</option>
+                                    <option value="JCB">JCB</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Crane Number</label>
+                                <input type="text" class="form-control" id="craneNumber" placeholder="e.g., GJ15AB1234">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Assign To (Operator/Sir) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="assignTo" placeholder="Enter operator name" required>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-4">
+                                <label class="form-label fw-bold">In Time</label>
+                                <input type="time" class="form-control" id="inTime" value="09:00">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label fw-bold">Out Time</label>
+                                <input type="time" class="form-control" id="outTime" value="17:00">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label fw-bold">Lunch (min)</label>
+                                <input type="number" class="form-control" id="lunchBreak" value="30" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Total Hours</label>
+                                <input type="text" class="form-control" id="totalHours" readonly placeholder="Auto calculated">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Rate (₹) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="rate" placeholder="Enter rate" required min="0" step="0.01">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Work Details <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="workDetails" rows="2" placeholder="Describe the work done" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Total Amount</label>
+                            <input type="text" class="form-control" id="totalAmount" readonly placeholder="₹0.00">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Remarks</label>
+                            <textarea class="form-control" id="workRemarks" rows="2" placeholder="Additional notes (optional)"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveWorksheet()" id="saveWorksheetBtn">Save Worksheet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         // ============================================
-        // FIREBASE CONFIGURATION
+        // FIREBASE CONFIGURATION - YOUR WORKING CONFIG
         // ============================================
         
         const firebaseConfig = {
@@ -88,175 +630,731 @@
             appId: "1:68829794521:web:2933f17847e5d043666ec8"
         };
 
-        // Global variables
-        let db = null;
+        // Initialize Firebase
+        let db;
         let firebaseReady = false;
-        let firestoreEnabled = false;
 
-        // Check login
-        if (localStorage.getItem('loggedIn') !== 'true') {
-            window.location.href = 'index.html';
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+            firebaseReady = true;
+            console.log('✅ Firebase initialized successfully');
+            document.getElementById('syncStatus').innerHTML = '<i class="fas fa-cloud"></i> Cloud Sync Active';
+            document.getElementById('syncStatus').style.background = 'rgba(46, 204, 113, 0.3)';
+        } catch (error) {
+            console.error('❌ Firebase error:', error);
+            firebaseReady = false;
+            document.getElementById('syncStatus').innerHTML = '<i class="fas fa-database"></i> Offline Mode';
         }
 
-        // Set username
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{"fullName":"Admin"}');
-        document.getElementById('userName').textContent = user.fullName;
+        // ============================================
+        // GLOBAL VARIABLES
+        // ============================================
+        
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{"fullName":"Admin","role":"admin"}');
+        let clients = [];
+        let worksheets = [];
+        let invoices = [];
 
-        // Initialize Firebase
-        function initFirebase() {
-            const statusEl = document.getElementById('firebaseStatus');
-            const solutionEl = document.getElementById('firebaseSolution');
-            const solutionText = document.getElementById('solutionText');
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check login
+            if (localStorage.getItem('loggedIn') !== 'true') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Set user info
+            document.getElementById('userName').textContent = currentUser.fullName;
+
+            // Set default date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('workDate').value = today;
+
+            // Load initial data
+            loadAllData();
             
-            try {
-                // Check if Firebase is loaded
-                if (typeof firebase === 'undefined') {
-                    statusEl.innerHTML = '❌ Firebase SDK not loaded - Check internet connection';
-                    statusEl.className = 'error-box';
-                    solutionEl.style.display = 'block';
-                    solutionText.innerHTML = 'Firebase SDK not loading. Check your internet connection and ad blockers.';
-                    return false;
-                }
-                
-                // Initialize Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
-                // Try to get Firestore
-                db = firebase.firestore();
-                
-                // Test Firestore connection
-                db.collection('test').doc('test').get()
-                    .then(() => {
-                        // SUCCESS - Firestore is enabled
-                        firestoreEnabled = true;
-                        firebaseReady = true;
-                        statusEl.innerHTML = '✅ Firebase Connected Successfully! Firestore is enabled.';
-                        statusEl.className = 'success-box';
-                        solutionEl.style.display = 'none';
-                        console.log('✅ Firestore is working!');
-                        
-                        // Load data from Firestore
-                        loadFromFirestore();
-                    })
-                    .catch((error) => {
-                        // ERROR - Firestore not enabled
-                        firestoreEnabled = false;
-                        firebaseReady = false;
-                        statusEl.innerHTML = '⚠️ Firebase connected but Firestore NOT enabled';
-                        statusEl.className = 'error-box';
-                        solutionEl.style.display = 'block';
-                        
-                        if (error.message.includes('Missing or insufficient permissions')) {
-                            solutionText.innerHTML = 'Firestore Database is not enabled. Click the "Fix Firestore Database" button above to enable it.';
-                        } else if (error.message.includes('The Cloud Firestore API is not enabled')) {
-                            solutionText.innerHTML = 'The Cloud Firestore API is not enabled. Click the "Fix Firestore Database" button above to enable it.';
-                        } else {
-                            solutionText.innerHTML = 'Error: ' + error.message + '<br><br>Click "Fix Firestore Database" button above to enable Firestore.';
-                        }
-                        
-                        console.error('❌ Firestore error:', error.message);
-                        // Load from local storage as fallback
-                        loadFromLocalStorage();
-                    });
-                    
-                return true;
-                
-            } catch (error) {
-                firebaseReady = false;
-                statusEl.innerHTML = '❌ Firebase initialization failed';
-                statusEl.className = 'error-box';
-                solutionEl.style.display = 'block';
-                solutionText.innerHTML = 'Error: ' + error.message;
-                console.error('❌ Firebase init error:', error);
-                
-                // Load from local storage as fallback
+            // Setup event listeners
+            setupEventListeners();
+        });
+
+        // ============================================
+        // FIREBASE DATA FUNCTIONS
+        // ============================================
+        
+        async function loadAllData() {
+            if (firebaseReady && db) {
+                await loadClientsFromFirebase();
+                await loadWorksheetsFromFirebase();
+                await loadInvoicesFromFirebase();
+            } else {
                 loadFromLocalStorage();
-                return false;
+            }
+            
+            updateDashboard();
+            renderClients();
+            renderWorksheets();
+            renderInvoices();
+            loadClientDropdown();
+        }
+
+        async function loadClientsFromFirebase() {
+            try {
+                const snapshot = await db.collection('clients').orderBy('created', 'desc').get();
+                clients = [];
+                snapshot.forEach(doc => {
+                    clients.push({ id: doc.id, ...doc.data() });
+                });
+                localStorage.setItem('clients', JSON.stringify(clients));
+                console.log(`✅ Loaded ${clients.length} clients from Firebase`);
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                loadClientsFromLocal();
             }
         }
 
-        // Load from Firestore
-        function loadFromFirestore() {
-            console.log('📥 Loading data from Firestore...');
+        async function loadWorksheetsFromFirebase() {
+            try {
+                const snapshot = await db.collection('worksheets').orderBy('date', 'desc').get();
+                worksheets = [];
+                snapshot.forEach(doc => {
+                    worksheets.push({ id: doc.id, ...doc.data() });
+                });
+                localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                console.log(`✅ Loaded ${worksheets.length} worksheets from Firebase`);
+            } catch (error) {
+                console.error('Error loading worksheets:', error);
+                loadWorksheetsFromLocal();
+            }
+        }
+
+        async function loadInvoicesFromFirebase() {
+            try {
+                const snapshot = await db.collection('invoices').orderBy('date', 'desc').get();
+                invoices = [];
+                snapshot.forEach(doc => {
+                    invoices.push({ id: doc.id, ...doc.data() });
+                });
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                console.log(`✅ Loaded ${invoices.length} invoices from Firebase`);
+            } catch (error) {
+                console.error('Error loading invoices:', error);
+                loadInvoicesFromLocal();
+            }
+        }
+
+        function loadClientsFromLocal() {
+            clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            localStorage.setItem('clients', JSON.stringify(clients));
+        }
+
+        function loadWorksheetsFromLocal() {
+            worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
+            localStorage.setItem('worksheets', JSON.stringify(worksheets));
+        }
+
+        function loadInvoicesFromLocal() {
+            invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            localStorage.setItem('invoices', JSON.stringify(invoices));
+        }
+
+        function loadFromLocalStorage() {
+            loadClientsFromLocal();
+            loadWorksheetsFromLocal();
+            loadInvoicesFromLocal();
+        }
+
+        // ============================================
+        // CLIENT FUNCTIONS
+        // ============================================
+        
+        function showAddClientModal() {
+            document.getElementById('clientForm').reset();
+            document.querySelector('#clientModal .modal-title').textContent = 'Add New Client';
+            const modal = new bootstrap.Modal(document.getElementById('clientModal'));
+            modal.show();
+        }
+
+        async function saveClient() {
+            const clientName = document.getElementById('clientName').value.trim();
+            const contractorName = document.getElementById('contractorName').value.trim();
+            const clientMobile = document.getElementById('clientMobile').value.trim();
+            const clientAddress = document.getElementById('clientAddress').value.trim();
+
+            if (!clientName || !contractorName || !clientMobile || !clientAddress) {
+                alert('Please fill all required fields (*)');
+                return;
+            }
+
+            if (clientMobile.length < 10 || clientMobile.length > 10) {
+                alert('Please enter valid 10 digit mobile number');
+                return;
+            }
+
+            const client = {
+                name: clientName,
+                contractorName: contractorName,
+                mobile: clientMobile,
+                address: clientAddress,
+                gst: document.getElementById('clientGST').value.trim(),
+                created: new Date().toISOString(),
+                createdBy: currentUser.fullName
+            };
+
+            try {
+                if (firebaseReady && db) {
+                    const docRef = await db.collection('clients').add(client);
+                    client.id = docRef.id;
+                    clients.unshift(client);
+                    localStorage.setItem('clients', JSON.stringify(clients));
+                    console.log('✅ Client saved to Firebase:', client.id);
+                } else {
+                    client.id = Date.now().toString();
+                    clients.unshift(client);
+                    localStorage.setItem('clients', JSON.stringify(clients));
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
+                await loadAllData();
+                alert('✅ Client saved successfully!');
+            } catch (error) {
+                console.error('Error saving client:', error);
+                alert('Error saving client. Please try again.');
+            }
+        }
+
+        async function deleteClient(clientId) {
+            if (!confirm('Are you sure you want to delete this client?')) return;
+
+            try {
+                if (firebaseReady && db) {
+                    await db.collection('clients').doc(clientId).delete();
+                }
+                
+                clients = clients.filter(c => c.id !== clientId);
+                localStorage.setItem('clients', JSON.stringify(clients));
+                
+                await loadAllData();
+                alert('✅ Client deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting client:', error);
+                alert('Error deleting client. Please try again.');
+            }
+        }
+
+        function renderClients() {
+            let html = '';
+            
+            if (clients.length === 0) {
+                html = `<div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h6>No Clients Found</h6>
+                    <p class="text-muted">Tap + to add your first client</p>
+                </div>`;
+            } else {
+                clients.forEach(client => {
+                    html += `
+                        <div class="card mb-2">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">${escapeHtml(client.name || '')}</h6>
+                                        <p class="mb-1 small text-muted">
+                                            <i class="fas fa-user me-1"></i> ${escapeHtml(client.contractorName || '')}<br>
+                                            <i class="fas fa-phone me-1"></i> ${escapeHtml(client.mobile || '')}<br>
+                                            <i class="fas fa-map-marker me-1"></i> ${escapeHtml(client.address || '')}
+                                        </p>
+                                        ${client.gst ? `<span class="badge bg-secondary">GST: ${escapeHtml(client.gst)}</span>` : ''}
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteClient('${client.id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('clientsList').innerHTML = html;
+        }
+
+        // ============================================
+        // WORKSHEET FUNCTIONS
+        // ============================================
+        
+        function loadClientDropdown() {
+            const select = document.getElementById('workClient');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Select Client</option>';
+            clients.forEach(client => {
+                select.innerHTML += `<option value="${client.id}">${escapeHtml(client.name)}</option>`;
+            });
+        }
+
+        function showAddWorksheetModal() {
+            // Reset form
+            document.getElementById('worksheetForm').reset();
+            
+            // Set default values
+            document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inTime').value = '09:00';
+            document.getElementById('outTime').value = '17:00';
+            document.getElementById('lunchBreak').value = '30';
             
             // Load clients
-            db.collection('clients').get()
-                .then(snapshot => {
-                    const clients = [];
-                    snapshot.forEach(doc => {
-                        clients.push({ id: doc.id, ...doc.data() });
-                    });
-                    localStorage.setItem('clients', JSON.stringify(clients));
-                    document.getElementById('clientCount').textContent = clients.length;
-                })
-                .catch(err => console.error('Error loading clients:', err));
+            loadClientDropdown();
             
-            // Load worksheets
-            db.collection('worksheets').get()
-                .then(snapshot => {
-                    const worksheets = [];
-                    snapshot.forEach(doc => {
-                        worksheets.push({ id: doc.id, ...doc.data() });
-                    });
+            document.querySelector('#worksheetModal .modal-title').textContent = 'Add New Worksheet';
+            
+            const modal = new bootstrap.Modal(document.getElementById('worksheetModal'));
+            modal.show();
+            
+            // Reset calculations
+            document.getElementById('totalHours').value = '';
+            document.getElementById('totalAmount').value = '';
+        }
+
+        function calculateTotalHours() {
+            const inTime = document.getElementById('inTime').value;
+            const outTime = document.getElementById('outTime').value;
+            const lunchBreak = parseInt(document.getElementById('lunchBreak').value) || 0;
+            
+            if (inTime && outTime) {
+                const inDate = new Date(`2000-01-01T${inTime}`);
+                const outDate = new Date(`2000-01-01T${outTime}`);
+                
+                if (outDate > inDate) {
+                    let diffHours = (outDate - inDate) / (1000 * 60 * 60);
+                    diffHours -= lunchBreak / 60;
+                    
+                    if (diffHours > 0) {
+                        document.getElementById('totalHours').value = diffHours.toFixed(2);
+                        calculateTotalAmount();
+                    } else {
+                        document.getElementById('totalHours').value = '0.00';
+                    }
+                } else {
+                    alert('Out time must be after in time');
+                }
+            }
+        }
+
+        function calculateTotalAmount() {
+            const hours = parseFloat(document.getElementById('totalHours').value) || 0;
+            const rate = parseFloat(document.getElementById('rate').value) || 0;
+            const amount = hours * rate;
+            document.getElementById('totalAmount').value = '₹' + amount.toFixed(2);
+        }
+
+        async function saveWorksheet() {
+            const workDate = document.getElementById('workDate').value;
+            const clientId = document.getElementById('workClient').value;
+            const craneType = document.getElementById('craneType').value;
+            const assignTo = document.getElementById('assignTo').value.trim();
+            const workDetails = document.getElementById('workDetails').value.trim();
+            const rate = document.getElementById('rate').value;
+            const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
+
+            if (!workDate || !clientId || !craneType || !assignTo || !workDetails || !rate || totalHours <= 0) {
+                alert('Please fill all required fields (*) and ensure total hours is calculated');
+                return;
+            }
+
+            const client = clients.find(c => c.id === clientId);
+            if (!client) {
+                alert('Please select a valid client');
+                return;
+            }
+
+            const totalAmount = totalHours * parseFloat(rate);
+
+            const worksheet = {
+                date: workDate,
+                clientId: client.id,
+                clientName: client.name,
+                contractorName: client.contractorName,
+                craneType: craneType,
+                craneNumber: document.getElementById('craneNumber').value.trim(),
+                assignTo: assignTo,
+                inTime: document.getElementById('inTime').value,
+                outTime: document.getElementById('outTime').value,
+                lunchBreak: parseInt(document.getElementById('lunchBreak').value) || 0,
+                totalHours: totalHours,
+                workDetails: workDetails,
+                rate: parseFloat(rate),
+                totalAmount: totalAmount,
+                remarks: document.getElementById('workRemarks').value.trim(),
+                invoiced: false,
+                created: new Date().toISOString(),
+                createdBy: currentUser.fullName
+            };
+
+            try {
+                if (firebaseReady && db) {
+                    const docRef = await db.collection('worksheets').add(worksheet);
+                    worksheet.id = docRef.id;
+                    worksheets.unshift(worksheet);
                     localStorage.setItem('worksheets', JSON.stringify(worksheets));
-                    document.getElementById('worksheetCount').textContent = worksheets.length;
-                })
-                .catch(err => console.error('Error loading worksheets:', err));
+                    console.log('✅ Worksheet saved to Firebase:', worksheet.id);
+                } else {
+                    worksheet.id = Date.now().toString();
+                    worksheets.unshift(worksheet);
+                    localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('worksheetModal')).hide();
+                await loadAllData();
+                alert('✅ Worksheet saved successfully!');
+            } catch (error) {
+                console.error('Error saving worksheet:', error);
+                alert('Error saving worksheet. Please try again.');
+            }
+        }
+
+        async function deleteWorksheet(worksheetId) {
+            if (!confirm('Are you sure you want to delete this worksheet?')) return;
+
+            try {
+                if (firebaseReady && db) {
+                    await db.collection('worksheets').doc(worksheetId).delete();
+                }
+                
+                worksheets = worksheets.filter(w => w.id !== worksheetId);
+                localStorage.setItem('worksheets', JSON.stringify(worksheets));
+                
+                await loadAllData();
+                alert('✅ Worksheet deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting worksheet:', error);
+                alert('Error deleting worksheet. Please try again.');
+            }
+        }
+
+        function renderWorksheets() {
+            let html = '';
             
-            // Load invoices
-            db.collection('invoices').get()
-                .then(snapshot => {
-                    const invoices = [];
-                    snapshot.forEach(doc => {
-                        invoices.push({ id: doc.id, ...doc.data() });
+            if (worksheets.length === 0) {
+                html = `<div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h6>No Worksheets Found</h6>
+                    <p class="text-muted">Tap + to add your first worksheet</p>
+                </div>`;
+            } else {
+                worksheets.slice(0, 20).forEach(ws => {
+                    html += `
+                        <div class="card mb-2">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-primary me-2">${escapeHtml(ws.date || '')}</span>
+                                            <span class="fw-bold">${escapeHtml(ws.clientName || '')}</span>
+                                        </div>
+                                        <p class="mb-1 small">
+                                            <i class="fas fa-crane me-1"></i> ${escapeHtml(ws.craneType || '')} 
+                                            ${ws.craneNumber ? `(${escapeHtml(ws.craneNumber)})` : ''}<br>
+                                            <i class="fas fa-user me-1"></i> ${escapeHtml(ws.assignTo || '')}<br>
+                                            <i class="fas fa-clock me-1"></i> ${escapeHtml(ws.inTime || '')} - ${escapeHtml(ws.outTime || '')} 
+                                            (${ws.totalHours || 0} hrs)<br>
+                                            <i class="fas fa-rupee-sign me-1"></i> ₹${(ws.totalAmount || 0).toFixed(2)}
+                                        </p>
+                                        ${ws.remarks ? `<small class="text-muted">Note: ${escapeHtml(ws.remarks)}</small>` : ''}
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteWorksheet('${ws.id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('worksheetsList').innerHTML = html;
+        }
+
+        // ============================================
+        // INVOICE FUNCTIONS
+        // ============================================
+        
+        async function generateInvoice() {
+            const pendingWorksheets = worksheets.filter(w => !w.invoiced);
+            
+            if (pendingWorksheets.length === 0) {
+                alert('No pending worksheets to invoice');
+                return;
+            }
+
+            // Group by client
+            const clientGroups = {};
+            pendingWorksheets.forEach(ws => {
+                if (!clientGroups[ws.clientId]) {
+                    clientGroups[ws.clientId] = [];
+                }
+                clientGroups[ws.clientId].push(ws);
+            });
+
+            let count = 0;
+
+            for (const [clientId, wsList] of Object.entries(clientGroups)) {
+                const client = clients.find(c => c.id === clientId);
+                if (!client) continue;
+
+                const totalAmount = wsList.reduce((sum, ws) => sum + ws.totalAmount, 0);
+                
+                const invoice = {
+                    invoiceNumber: 'INV-' + new Date().getFullYear() + '-' + (invoices.length + count + 1).toString().padStart(3, '0'),
+                    date: new Date().toISOString().split('T')[0],
+                    clientId: clientId,
+                    clientName: client.name,
+                    worksheetIds: wsList.map(ws => ws.id),
+                    totalAmount: totalAmount,
+                    status: 'pending',
+                    created: new Date().toISOString(),
+                    createdBy: currentUser.fullName
+                };
+
+                try {
+                    if (firebaseReady && db) {
+                        const docRef = await db.collection('invoices').add(invoice);
+                        invoice.id = docRef.id;
+                        invoices.unshift(invoice);
+                        localStorage.setItem('invoices', JSON.stringify(invoices));
+                    } else {
+                        invoice.id = Date.now().toString() + count;
+                        invoices.unshift(invoice);
+                        localStorage.setItem('invoices', JSON.stringify(invoices));
+                    }
+                    
+                    // Mark worksheets as invoiced
+                    wsList.forEach(ws => {
+                        ws.invoiced = true;
                     });
-                    localStorage.setItem('invoices', JSON.stringify(invoices));
-                    document.getElementById('invoiceCount').textContent = invoices.length;
-                })
-                .catch(err => console.error('Error loading invoices:', err));
-        }
+                    
+                    count++;
+                } catch (error) {
+                    console.error('Error creating invoice:', error);
+                }
+            }
 
-        // Load from Local Storage
-        function loadFromLocalStorage() {
-            console.log('📥 Loading data from Local Storage...');
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            const worksheets = JSON.parse(localStorage.getItem('worksheets') || '[]');
-            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            // Update worksheets in storage
+            localStorage.setItem('worksheets', JSON.stringify(worksheets));
             
-            document.getElementById('clientCount').textContent = clients.length;
-            document.getElementById('worksheetCount').textContent = worksheets.length;
-            document.getElementById('invoiceCount').textContent = invoices.length;
+            await loadAllData();
+            alert(`✅ ${count} invoice(s) generated successfully!`);
         }
 
-        // Test Firebase Connection
-        function testFirebaseConnection() {
-            initFirebase();
+        async function markInvoiceAsPaid(invoiceId) {
+            try {
+                if (firebaseReady && db) {
+                    await db.collection('invoices').doc(invoiceId).update({
+                        status: 'paid'
+                    });
+                }
+                
+                const invoice = invoices.find(i => i.id === invoiceId);
+                if (invoice) {
+                    invoice.status = 'paid';
+                    localStorage.setItem('invoices', JSON.stringify(invoices));
+                }
+                
+                await loadAllData();
+                alert('✅ Invoice marked as paid!');
+            } catch (error) {
+                console.error('Error updating invoice:', error);
+                alert('Error updating invoice. Please try again.');
+            }
         }
 
-        // Enable Firestore - Opens the correct Firebase Console page
-        function enableFirestore() {
-            window.open('https://console.firebase.google.com/project/bhavishya-enterprise/firestore', '_blank');
-            alert('1. Click "Create database"\n2. Choose "Start in test mode"\n3. Select "asia-south1" (Mumbai)\n4. Click "Enable"\n5. Then refresh this page');
+        function renderInvoices() {
+            let html = '';
+            
+            if (invoices.length === 0) {
+                html = `<div class="empty-state">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <h6>No Invoices Found</h6>
+                    <p class="text-muted">Generate your first invoice</p>
+                </div>`;
+            } else {
+                invoices.slice(0, 20).forEach(inv => {
+                    html += `
+                        <div class="card mb-2">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-secondary me-2">${escapeHtml(inv.invoiceNumber || '')}</span>
+                                            <span class="badge ${inv.status === 'paid' ? 'bg-success' : 'bg-warning'}">${inv.status || 'pending'}</span>
+                                        </div>
+                                        <p class="mb-1">
+                                            <strong>${escapeHtml(inv.clientName || '')}</strong><br>
+                                            <small class="text-muted">${escapeHtml(inv.date || '')}</small>
+                                        </p>
+                                        <h6 class="mb-0 text-primary">₹${(inv.totalAmount || 0).toFixed(2)}</h6>
+                                    </div>
+                                    ${inv.status !== 'paid' ? `
+                                        <button class="btn btn-sm btn-success" onclick="markInvoiceAsPaid('${inv.id}')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('invoicesList').innerHTML = html;
         }
 
-        // Logout
+        // ============================================
+        // DASHBOARD FUNCTIONS
+        // ============================================
+        
+        function updateDashboard() {
+            // Update stats
+            document.getElementById('totalClients').textContent = clients.length;
+            document.getElementById('totalWorksheets').textContent = worksheets.length;
+            document.getElementById('totalInvoices').textContent = invoices.length;
+            
+            // Calculate amounts
+            let totalRevenue = 0;
+            let pendingAmount = 0;
+            let paidAmount = 0;
+            
+            invoices.forEach(inv => {
+                if (inv.status === 'paid') {
+                    totalRevenue += inv.totalAmount || 0;
+                    paidAmount += inv.totalAmount || 0;
+                } else {
+                    pendingAmount += inv.totalAmount || 0;
+                }
+            });
+            
+            document.getElementById('totalRevenue').textContent = '₹' + totalRevenue.toFixed(2);
+            document.getElementById('pendingAmount').textContent = '₹' + pendingAmount.toFixed(2);
+            document.getElementById('paidAmount').textContent = '₹' + paidAmount.toFixed(2);
+            
+            // Recent activity
+            let recentHtml = '';
+            const recentWorksheets = worksheets.slice(0, 5);
+            
+            if (recentWorksheets.length === 0) {
+                recentHtml = `<div class="list-group-item text-center text-muted py-4">
+                    <i class="fas fa-clock mb-2"></i>
+                    <p>No recent activity</p>
+                </div>`;
+            } else {
+                recentWorksheets.forEach(ws => {
+                    recentHtml += `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${escapeHtml(ws.clientName || '')}</h6>
+                                <small class="text-muted">${escapeHtml(ws.date || '')}</small>
+                            </div>
+                            <p class="mb-1 small">${escapeHtml(ws.craneType || '')} - ${ws.totalHours || 0} hrs</p>
+                            <small class="text-primary fw-bold">₹${(ws.totalAmount || 0).toFixed(2)}</small>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('recentActivity').innerHTML = recentHtml;
+        }
+
+        // ============================================
+        // UI FUNCTIONS
+        // ============================================
+        
+        function switchSection(section, element) {
+            // Update active nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // Show selected section
+            document.querySelectorAll('.section').forEach(s => {
+                s.classList.remove('active');
+            });
+            document.getElementById(section + 'Section').classList.add('active');
+        }
+
+        function quickAdd() {
+            const activeSection = document.querySelector('.section.active').id;
+            
+            if (activeSection === 'clientsSection') {
+                showAddClientModal();
+            } else if (activeSection === 'worksheetsSection') {
+                showAddWorksheetModal();
+            } else if (activeSection === 'invoicesSection') {
+                generateInvoice();
+            } else {
+                // Show options
+                if (confirm('Add Worksheet?\nOK = Yes\nCancel = Add Client')) {
+                    showAddWorksheetModal();
+                } else {
+                    showAddClientModal();
+                }
+            }
+        }
+
         function logout() {
             localStorage.removeItem('loggedIn');
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initFirebase();
-        });
+        function setupEventListeners() {
+            // Worksheet calculations
+            document.getElementById('inTime').addEventListener('change', calculateTotalHours);
+            document.getElementById('outTime').addEventListener('change', calculateTotalHours);
+            document.getElementById('lunchBreak').addEventListener('change', calculateTotalHours);
+            document.getElementById('rate').addEventListener('keyup', calculateTotalAmount);
+            document.getElementById('rate').addEventListener('change', calculateTotalAmount);
+            
+            // Mobile back button handling
+            window.addEventListener('popstate', function() {
+                if (localStorage.getItem('loggedIn') !== 'true') {
+                    window.location.href = 'index.html';
+                }
+            });
+        }
 
-        // Make functions global
-        window.testFirebaseConnection = testFirebaseConnection;
-        window.enableFirestore = enableFirestore;
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Make functions globally accessible
+        window.switchSection = switchSection;
+        window.quickAdd = quickAdd;
+        window.showAddClientModal = showAddClientModal;
+        window.showAddWorksheetModal = showAddWorksheetModal;
+        window.saveClient = saveClient;
+        window.saveWorksheet = saveWorksheet;
+        window.deleteClient = deleteClient;
+        window.deleteWorksheet = deleteWorksheet;
+        window.generateInvoice = generateInvoice;
+        window.markInvoiceAsPaid = markInvoiceAsPaid;
         window.logout = logout;
+        window.calculateTotalHours = calculateTotalHours;
+        window.calculateTotalAmount = calculateTotalAmount;
     </script>
 </body>
 </html>
